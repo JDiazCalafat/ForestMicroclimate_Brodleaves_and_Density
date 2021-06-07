@@ -1,0 +1,166 @@
+---
+title: "Basal area script"
+author: "Joan Diaz Calafat"
+date: "6/7/2021"
+output: html_document
+---
+
+Load data:
+
+```{r}
+trees <- read.csv("Träddata_Vindeln_Complete.csv", header = TRUE, sep = ";", dec = ",")
+```
+
+We only consider as trees anything above 5cm DBH:
+
+```{r}
+trees <- trees[which(trees$DBH >= 5),]
+```
+
+Calculate "real distances" to the center of the plot:
+_DBH is in mm, distance is in m._
+```{r}
+trees$real.dist <- trees$Distance + (trees$DBH/2)/1000
+```
+
+Group by site and plot number and calculate basal area for different distance intervals to the center of the plot (i.e. to the temeprature logger):
+
+```{r}
+library(dplyr)
+
+trees <- trees %>%
+  filter(real.dist <= 10) %>%
+  group_by(Site, Plot) %>%
+  summarise(Basal_Area_10m = (sum(pi*(((DBH[real.dist <= 10]/2)/1000))^2)/((pi*10^2))*10000),
+Basal_Area_9m = (sum(pi*(((DBH[real.dist <= 9]/2)/1000))^2)/((pi*10^2))*10000),
+Basal_Area_8m = (sum(pi*(((DBH[real.dist <= 8]/2)/1000))^2)/((pi*10^2))*10000),
+Basal_Area_7m = (sum(pi*(((DBH[real.dist <= 7]/2)/1000))^2)/((pi*10^2))*10000),
+Basal_Area_6m = (sum(pi*(((DBH[real.dist <= 6]/2)/1000))^2)/((pi*10^2))*10000),
+Basal_Area_5m = (sum(pi*(((DBH[real.dist <= 5]/2)/1000))^2)/((pi*10^2))*10000),
+Basal_Area_4m = (sum(pi*(((DBH[real.dist <= 4]/2)/1000))^2)/((pi*10^2))*10000))
+```
+
+Load temperature data and calculate mean, min and max temperatures for both soil and air loggers:
+
+```{r}
+# From tree data to basal area
+setwd("J:/TEMPERATURE DATA/SILJAN/202103_SILJAN_TEMPERATURE/")
+
+file.list <- list.files(path = ".", pattern = "*.xlsx", all.files = FALSE,
+                        full.names = FALSE, recursive = FALSE,
+                        ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
+
+library(readxl)
+
+# Load data without skipping rows and setting column names:
+df.list <- lapply(file.list, read_excel)
+
+data.temp <- do.call(rbind, df.list)
+```
+
+Data completeness:
+
+```{r}
+library(lubridate)
+oneyear <- seq(ymd_hm('2019-10-28 18:15'),ymd_hm('2020-10-28 18:00'), by = '15 mins')
+data.temp <- data.temp[which(data.temp$Date_time %in% oneyear),]
+
+temp.air <- data.temp[which(data.temp$location == "a"),]
+temp.soil <- data.temp[which(data.temp$location == "s"),]
+
+library(reshape2)
+dates.air.plot <- dcast(temp.air, Date_time ~ Plot)
+# soil
+dates.soil.plot <- dcast(temp.soil, Date_time ~ Plot)
+library(naniar)
+# air
+vis_miss(dates.air.plot, warn_large_data = FALSE)
+# soil
+vis_miss(dates.soil.plot, warn_large_data = FALSE)
+```
+
+Let's split date and time into different variables:
+
+```{r}
+library(stringr)
+temp  <- cbind(str_split_fixed(data.temp$Date_time, " ", length(colnames(data.temp)) +1), data.temp[,-3])
+colnames(temp) <- c("Date", "Time", "Day", "Month", "Year", "Plot", "Location", "Temp")
+library(lubridate)
+temp$Day <- day(temp$Date)
+temp$Month <- month(temp$Date)
+temp$Year <- year(temp$Date)
+
+# We separate air and soil data again:
+
+temp.air <- temp[which(temp$Location == "a"),]
+temp.soil <- temp[which(temp$Location == "s"),]
+```
+
+Calculate mean, max and min temperatures for each air and soil logger in each plot:
+
+```{r}
+# MEAN
+av.temp.a <- aggregate(temp.air$Temp~temp.air$Plot, FUN = mean)
+colnames(av.temp.a) <- c("Plot", "Mean_Temp")
+av.temp.s <- aggregate(temp.soil$Temp, by = list(temp.soil$Plot), FUN = mean)
+colnames(av.temp.s) <- c("Plot", "Mean_Temp")
+
+# MAX
+max.temp.a <- aggregate(temp.air$Temp~temp.air$Plot, FUN = max)
+colnames(max.temp.a) <- c("Plot", "Max_Temp")
+max.temp.s <- aggregate(temp.soil$Temp, by = list(temp.soil$Plot), FUN = max)
+colnames(max.temp.s) <- c("Plot", "Max_Temp")
+
+# MIN
+min.temp.a <- aggregate(temp.air$Temp~temp.air$Plot, FUN = min)
+colnames(min.temp.a) <- c("Plot", "Min_Temp")
+min.temp.s <- aggregate(temp.soil$Temp, by = list(temp.soil$Plot), FUN = min)
+colnames(min.temp.s) <- c("Plot", "Min_Temp")
+```
+
+Merge all air and all soil temperatures into different objects:
+
+```{r}
+data.temp.a <- cbind(av.temp.a, min.temp.a, max.temp.a)
+data.temp.a <- data.temp.a[,c(1,2,4,6)]
+data.temp.s <- cbind(av.temp.s, min.temp.s, max.temp.s)
+data.temp.s <- data.temp.s[,c(1,2,4,6)]
+```
+
+Merge tree and temperature data:
+
+```{r}
+siljan.treetemp.a <- merge(trees, data.temp.a, by = "Plot")
+# Problematic plots?
+siljan.treetemp.a <- siljan.treetemp.a[-which(siljan.treetemp.a$Plot == 12),] 
+siljan.treetemp.a <- siljan.treetemp.a[-which(siljan.treetemp.a$Plot == 14),] 
+siljan.treetemp.a <- siljan.treetemp.a[-which(siljan.treetemp.a$Plot == 21),] 
+siljan.treetemp.a <- siljan.treetemp.a[-which(siljan.treetemp.a$Plot == 30),] 
+
+siljan.treetemp.s <- merge(trees, data.temp.s, by = "Plot")
+# Problematic plots?
+siljan.treetemp.s <- siljan.treetemp.s[-which(siljan.treetemp.s$Plot == 2),] 
+siljan.treetemp.s <- siljan.treetemp.s[-which(siljan.treetemp.s$Plot == 13),] 
+siljan.treetemp.s <- siljan.treetemp.s[-which(siljan.treetemp.s$Plot == 33),] 
+```
+
+Visualize correlations between temperature and basal area at different distances from the temperature logger:
+
+```{r}
+library(GGally)
+
+ggpairs(siljan.treetemp.a,
+        columns = 2:length(siljan.treetemp.a), # That is all variables (=columns) except the first one, but depends on your dataset
+        lower=list(continuous = "smooth", combo = "facethist", discrete = "facetbar", na = "na"),
+        diag=list(continuous=wrap("barDiag", color='white', fill='darkgreen')),
+        upper=list(continuous=wrap("cor", method = "spearman", title='Corr', stars=T)))
+
+
+ggpairs(siljan.treetemp.s,
+        columns = 2:length(siljan.treetemp.a), # That is all variables (=columns) except the first one, but depends on your dataset
+        lower=list(continuous = "smooth", combo = "facethist", discrete = "facetbar", na = "na"),
+        diag=list(continuous=wrap("barDiag", color='white', fill='darkgreen')),
+        upper=list(continuous=wrap("cor", method = "spearman", title='Corr', stars=T)))
+
+```
+
