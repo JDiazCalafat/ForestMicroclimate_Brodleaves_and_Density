@@ -1,0 +1,374 @@
+Load packages:
+
+```{r}
+library(readxl)
+library(dplyr)
+```
+
+
+# Load tree data:
+
+```{r}
+file.list <- list.files(path = "J:/TREE DATA/", 
+                        pattern = "*.xlsx", all.files = FALSE, full.names = TRUE, recursive = FALSE,
+                        ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
+
+df.list <- lapply(file.list, read_excel)
+
+rm(file.list)
+tree.data <- do.call(rbind, df.list)
+rm(df.list)
+
+tree.data <- tree.data[,-which(colnames(tree.data) == "Angle")]
+
+tree.data$Distance <- as.numeric(tree.data$Distance)
+
+tree.data <- na.omit(tree.data)
+```
+
+## Data cleaning
+
+First, let's calculate the real distance from the hypothetical center of each tree (i.e. diameter/2) and the center of the plot. For this, we will add half the diameter of each tree to its recorded distance. Then, since we are only interested in trees within a 10 m radius, we will remove all trees with a "real distance" larger than 10m.
+
+```{r}
+tree.data$DBH <- as.numeric(tree.data$DBH)
+tree.data$Distance <- as.numeric(tree.data$Distance)
+tree.data$real.dist <- tree.data$Distance - tree.data$DBH/2000 #DBH is recorded in mm
+```
+We are also just interested in trees above 5cm of DBH. DBH is recorded in mm, so we will filter everything from 50 mm up.
+
+```{r}
+tree.data <- tree.data[which(tree.data$DBH >= 50),]
+```
+
+Plot 35 and 36 in Arville were located in a clear cut with no trees, but we are still interested in temperatures recorded there, so we will add these back to the dataset (they were removed in line 26 "na.omit() instruction and would have been removed again by line 41).
+
+```{r}
+#missing.arville <- data.frame(names(tree.data), c("Arville", 35, NA, NA, NA, NA, NA), c("Arville", 36, NA, NA, NA, NA, NA))
+
+#rownames(missing.arville) <- missing.arville$names.tree.data.
+
+#missing.arville <- missing.arville[,-which(names(missing.arville) == "names.tree.data.")]
+
+#missing.arville <- t(missing.arville)
+
+#rownames(missing.arville) <- NULL 
+  
+#tree.data <- rbind(tree.data, missing.arville)
+
+#rm(missing.arville)
+```
+
+## Calculate basal area
+
+As we measured trees in a 10 m radius everywhere but in Arville, where we used 20 m radius, we will run this in two separate instructions to create variables for different radi at 1 m intervals. This way we will not calculate BA calues for radi between 11 and 20 for sites that are not Arville.
+
+```{r}
+#detach(package:plyr) #in case it has been loaded previously
+
+tree.data$DBH <- as.numeric(tree.data$DBH)
+tree.data$Distance <- as.numeric(tree.data$Distance)
+tree.data$real.dist <- as.numeric(tree.data$real.dist)
+
+tree.data.plot.arville <- tree.data %>%
+  filter((Site %in% "Arville")) %>%
+  group_by(Site, Plot) %>%
+  summarise(
+Basal_Area_20m = (sum((pi*(DBH[real.dist <= 20]/20)^2)/10000)/(pi*20^2))*10000,
+Basal_Area_19m = (sum((pi*(DBH[real.dist <= 19]/20)^2)/10000)/(pi*19^2))*10000,
+Basal_Area_18m = (sum((pi*(DBH[real.dist <= 18]/20)^2)/10000)/(pi*18^2))*10000,
+Basal_Area_17m = (sum((pi*(DBH[real.dist <= 17]/20)^2)/10000)/(pi*17^2))*10000,
+Basal_Area_16m = (sum((pi*(DBH[real.dist <= 16]/20)^2)/10000)/(pi*16^2))*10000,
+Basal_Area_15m = (sum((pi*(DBH[real.dist <= 15]/20)^2)/10000)/(pi*15^2))*10000,
+Basal_Area_14m = (sum((pi*(DBH[real.dist <= 14]/20)^2)/10000)/(pi*14^2))*10000,
+Basal_Area_13m = (sum((pi*(DBH[real.dist <= 13]/20)^2)/10000)/(pi*13^2))*10000,
+Basal_Area_12m = (sum((pi*(DBH[real.dist <= 12]/20)^2)/10000)/(pi*12^2))*10000,
+Basal_Area_11m = (sum((pi*(DBH[real.dist <= 11]/20)^2)/10000)/(pi*11^2))*10000,
+Basal_Area_10m = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(pi*10^2))*10000,
+Basal_Area_9m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
+Basal_Area_8m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
+Basal_Area_7m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
+Basal_Area_6m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
+Basal_Area_5m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
+Basal_Area_4m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
+
+tree.data.plot.notarville <- tree.data %>%
+  filter(!(Site %in% "Arville")) %>%
+  group_by(Site, Plot) %>%
+  summarise(
+Basal_Area_10m = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(pi*10^2))*10000,
+Basal_Area_9m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
+Basal_Area_8m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
+Basal_Area_7m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
+Basal_Area_6m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
+Basal_Area_5m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
+Basal_Area_4m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
+
+# As we did not measure trees between 10 and 20 m radi for places other than Arville, we will copy the BA value at 10 m radi to all other radi for these places. This way, when using the "Basal_Area_20m" variable we will be using all our available data (i.e BA calculated at 20 m in Arville and at 10 in all the other sites)
+
+tree.data.plot.notarville$Basal_Area_20m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot.notarville$Basal_Area_19m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot.notarville$Basal_Area_18m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot.notarville$Basal_Area_17m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot.notarville$Basal_Area_16m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot.notarville$Basal_Area_15m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot.notarville$Basal_Area_14m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot.notarville$Basal_Area_13m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot.notarville$Basal_Area_12m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot.notarville$Basal_Area_11m <- tree.data.plot.notarville$Basal_Area_10m
+
+tree.data.plot <- rbind (tree.data.plot.arville, tree.data.plot.notarville)
+
+rm(tree.data.plot.arville)
+rm(tree.data.plot.notarville)
+```
+
+# Percentage of broad-leaved species
+
+First, we will create a new variable stating whether a tree species is broad-leaved or narrow-leaved.
+
+```{r}
+levels(as.factor(tree.data$Species))
+```
+
+A = Alder
+B = Birch
+BE = Beech
+CB = Carpinus betulus
+DF = Douglas fir
+E = Elder
+L = Larch
+O = Oak
+P = Pine
+R = Rowan
+S = Spruce
+Salix = Salix
+SITKA = Sitka
+
+```{r}
+tree.data$leaves <- ifelse(tree.data$Species %in% c("P", "S", "DF", "L", "SITKA"),"Narrow","Broad")
+
+broad.leaved <- tree.data[which(tree.data$leaves == "Broad"),] 
+
+tree.data.plot2 <- broad.leaved %>%
+  filter((Site %in% "Arville")) %>%
+  group_by(Site, Plot) %>%
+  summarise(
+Broad_BA_20m = (sum((pi*(DBH[real.dist <= 20]/20)^2)/10000)/(pi*20^2))*10000,
+Broad_BA_19m = (sum((pi*(DBH[real.dist <= 19]/20)^2)/10000)/(pi*19^2))*10000,
+Broad_BA_18m = (sum((pi*(DBH[real.dist <= 18]/20)^2)/10000)/(pi*18^2))*10000,
+Broad_BA_17m = (sum((pi*(DBH[real.dist <= 17]/20)^2)/10000)/(pi*17^2))*10000,
+Broad_BA_16m = (sum((pi*(DBH[real.dist <= 16]/20)^2)/10000)/(pi*16^2))*10000,
+Broad_BA_15m = (sum((pi*(DBH[real.dist <= 15]/20)^2)/10000)/(pi*15^2))*10000,
+Broad_BA_14m = (sum((pi*(DBH[real.dist <= 14]/20)^2)/10000)/(pi*14^2))*10000,
+Broad_BA_13m = (sum((pi*(DBH[real.dist <= 13]/20)^2)/10000)/(pi*13^2))*10000,
+Broad_BA_12m = (sum((pi*(DBH[real.dist <= 12]/20)^2)/10000)/(pi*12^2))*10000,
+Broad_BA_11m = (sum((pi*(DBH[real.dist <= 11]/20)^2)/10000)/(pi*11^2))*10000,
+Broad_BA_10m = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(pi*10^2))*10000,
+Broad_BA_9m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
+Broad_BA_8m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
+Broad_BA_7m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
+Broad_BA_6m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
+Broad_BA_5m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
+Broad_BA_4m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
+
+
+
+tree.data.plot3 <- broad.leaved %>%
+  filter(!(Site %in% "Arville")) %>%
+  group_by(Site, Plot) %>%
+  summarise(
+Broad_BA_10m = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(pi*10^2))*10000,
+Broad_BA_9m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
+Broad_BA_8m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
+Broad_BA_7m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
+Broad_BA_6m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
+Broad_BA_5m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
+Broad_BA_4m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
+
+# Fill in 10-20 m radi for sites other than Arville with 10m radius data
+
+tree.data.plot3$Broad_BA_20m <- tree.data.plot3$Broad_BA_10m
+
+tree.data.plot3$Broad_BA_19m <- tree.data.plot3$Broad_BA_10m
+
+tree.data.plot3$Broad_BA_18m <- tree.data.plot3$Broad_BA_10m
+
+tree.data.plot3$Broad_BA_17m <- tree.data.plot3$Broad_BA_10m
+
+tree.data.plot3$Broad_BA_16m <- tree.data.plot3$Broad_BA_10m
+
+tree.data.plot3$Broad_BA_15m <- tree.data.plot3$Broad_BA_10m
+
+tree.data.plot3$Broad_BA_14m <- tree.data.plot3$Broad_BA_10m
+
+tree.data.plot3$Broad_BA_13m <- tree.data.plot3$Broad_BA_10m
+
+tree.data.plot3$Broad_BA_12m <- tree.data.plot3$Broad_BA_10m
+
+tree.data.plot3$Broad_BA_11m <- tree.data.plot3$Broad_BA_10m
+
+
+broad.ba2 <- tree.data.plot2[,which(names(tree.data.plot2) %in% c("Site", "Plot", "Broad_BA_20m", "Broad_BA_19m", "Broad_BA_18m", "Broad_BA_17m", "Broad_BA_16m", "Broad_BA_15m", "Broad_BA_14m", "Broad_BA_13m", "Broad_BA_12m", "Broad_BA_11m", "Broad_BA_10m", "Broad_BA_9m", "Broad_BA_8m", "Broad_BA_7m", "Broad_BA_6m", "Broad_BA_5m", "Broad_BA_4m"))]
+
+broad.ba3 <- tree.data.plot3[,which(names(tree.data.plot3) %in% c("Site", "Plot", "Broad_BA_20m", "Broad_BA_19m", "Broad_BA_18m", "Broad_BA_17m", "Broad_BA_16m", "Broad_BA_15m", "Broad_BA_14m", "Broad_BA_13m", "Broad_BA_12m", "Broad_BA_11m", "Broad_BA_10m", "Broad_BA_9m", "Broad_BA_8m", "Broad_BA_7m", "Broad_BA_6m", "Broad_BA_5m", "Broad_BA_4m"))]
+
+broad.ba <- rbind(broad.ba2, broad.ba3)
+
+tree.data.plot <- tree.data.plot %>% plyr::join(broad.ba, by=c("Site","Plot"))
+
+rm(tree.data.plot2)
+rm(tree.data.plot3)
+rm(broad.leaved)
+rm(broad.ba)
+rm(broad.ba2)
+rm(broad.ba3)
+
+tree.data.plot[is.na(tree.data.plot)] <- 0 #no trees = 0
+```
+
+Calculate the % of broadleaved areas on the basal area at different radi:
+
+```{r}
+tree.data.plot$perc_broad_20m <- tree.data.plot$Broad_BA_20m/tree.data.plot$Basal_Area_20m*100
+tree.data.plot$perc_broad_19m <- tree.data.plot$Broad_BA_19m/tree.data.plot$Basal_Area_19m*100
+tree.data.plot$perc_broad_18m <- tree.data.plot$Broad_BA_18m/tree.data.plot$Basal_Area_18m*100
+tree.data.plot$perc_broad_17m <- tree.data.plot$Broad_BA_17m/tree.data.plot$Basal_Area_17m*100
+tree.data.plot$perc_broad_16m <- tree.data.plot$Broad_BA_16m/tree.data.plot$Basal_Area_16m*100
+tree.data.plot$perc_broad_15m <- tree.data.plot$Broad_BA_15m/tree.data.plot$Basal_Area_15m*100
+tree.data.plot$perc_broad_14m <- tree.data.plot$Broad_BA_14m/tree.data.plot$Basal_Area_14m*100
+tree.data.plot$perc_broad_13m <- tree.data.plot$Broad_BA_13m/tree.data.plot$Basal_Area_13m*100
+tree.data.plot$perc_broad_12m <- tree.data.plot$Broad_BA_12m/tree.data.plot$Basal_Area_12m*100
+tree.data.plot$perc_broad_11m <- tree.data.plot$Broad_BA_11m/tree.data.plot$Basal_Area_11m*100
+tree.data.plot$perc_broad_10m <- tree.data.plot$Broad_BA_10m/tree.data.plot$Basal_Area_10m*100
+tree.data.plot$perc_broad_9m <- tree.data.plot$Broad_BA_9m/tree.data.plot$Basal_Area_9m*100
+tree.data.plot$perc_broad_8m <- tree.data.plot$Broad_BA_8m/tree.data.plot$Basal_Area_8m*100
+tree.data.plot$perc_broad_7m <- tree.data.plot$Broad_BA_7m/tree.data.plot$Basal_Area_7m*100
+tree.data.plot$perc_broad_6m <- tree.data.plot$Broad_BA_6m/tree.data.plot$Basal_Area_6m*100
+tree.data.plot$perc_broad_5m <- tree.data.plot$Broad_BA_5m/tree.data.plot$Basal_Area_5m*100
+tree.data.plot$perc_broad_4m <- tree.data.plot$Broad_BA_4m/tree.data.plot$Basal_Area_4m*100
+
+#NaNs appear when dividing by 0, which happens in places with no trees (basal area = 0). Therefore, we can just replace NaNs by 0. In R, is.nan() does not work for dataset, so we will create a small function to address this.
+
+is.nan.data.frame <- function(x)
+do.call(cbind, lapply(x, is.nan))
+
+tree.data.plot[is.nan(tree.data.plot)] <- 0 
+```
+
+
+## Competition index
+
+```{r}
+tree.data.2 <- tree.data %>%
+  group_by(Site, Plot) %>%
+  summarise(
+nci20m = sum(DBH[real.dist <= 20]/Distance[real.dist <= 20]),
+nci19m = sum(DBH[real.dist <= 19]/Distance[real.dist <= 19]),
+nci18m = sum(DBH[real.dist <= 18]/Distance[real.dist <= 18]),
+nci17m = sum(DBH[real.dist <= 17]/Distance[real.dist <= 17]),
+nci16m = sum(DBH[real.dist <= 16]/Distance[real.dist <= 16]),
+nci15m = sum(DBH[real.dist <= 15]/Distance[real.dist <= 15]),
+nci14m = sum(DBH[real.dist <= 14]/Distance[real.dist <= 14]),
+nci13m = sum(DBH[real.dist <= 13]/Distance[real.dist <= 13]),
+nci12m = sum(DBH[real.dist <= 12]/Distance[real.dist <= 12]),
+nci11m = sum(DBH[real.dist <= 11]/Distance[real.dist <= 11]),
+nci10m = sum(DBH[real.dist <= 10]/Distance[real.dist <= 10]),
+nci9m = sum(DBH[real.dist <= 9]/Distance[real.dist <= 9]),
+nci8m = sum(DBH[real.dist <= 8]/Distance[real.dist <= 8]),
+nci7m = sum(DBH[real.dist <= 7]/Distance[real.dist <= 7]),
+nci6m = sum(DBH[real.dist <= 6]/Distance[real.dist <= 6]),
+nci5m = sum(DBH[real.dist <= 5]/Distance[real.dist <= 5]),
+nci4m = sum(DBH[real.dist <= 4]/Distance[real.dist <= 4]))
+
+
+# Merge with previous data
+tree.data.plot <- tree.data.plot %>% plyr::join(tree.data.2, by=c("Site","Plot"))
+
+rm(tree.data.2)
+```
+
+## Hemispherical pictures
+
+Canopy opennes was calculated with the script _HemiphotBatch.R_ separately for each site. This script comes from ter Steege, H. (2018).
+
+```{r}
+file.list <- list.files(path = "J:/HEMISPHERICAL DATA/", 
+                        pattern = "*.csv", all.files = FALSE, full.names = TRUE, recursive = FALSE,
+                        ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
+
+df.list <- lapply(file.list, read.csv, sep = ";", dec = ",")
+
+rm(file.list)
+hemispherical.data <- do.call(rbind, df.list)
+rm(df.list)
+```
+
+Keep only data of interest:
+
+```{r}
+hemispherical.data <- hemispherical.data[,which(colnames(hemispherical.data) %in% c("Site", "Plot", "CanOpen"))]
+```
+
+Calculate differences in summer and winter canopy openness for Siljan (the only site with both types of pictures). Data labelled as "Siljan" corresponds to summer season pictures (since all other sites only have pictures for summer). Data appearing as "Siljan_win" corresponds to winter pictures.
+
+```{r}
+hemispherical.data[which(hemispherical.data$Site == "Siljan_winter"),]$CanOpen -
+hemispherical.data[which(hemispherical.data$Site == "Siljan"),]$CanOpen
+```
+
+For now, we will ignore this canopy cover differences and focus only on summer pictures:
+
+```{r}
+hemispherical.data <- hemispherical.data[-which(hemispherical.data$Site == "Siljan_winter"),]
+```
+
+Merge with main dataset:
+
+```{r}
+tree.data.plot <- tree.data.plot %>% plyr::join(hemispherical.data, by=c("Site","Plot"))
+
+rm(hemispherical.data)
+```
+
+Export dataset:
+
+```{r}
+tree.data.plot <- tree.data.plot %>% 
+  dplyr::rename(
+    site = Site)
+
+write.csv(tree.data.plot, file = "./DATASETS/tree_data.csv", row.names = FALSE, quote = FALSE)
+```
+
+
+# Figure
+
+```{r}
+library(ggplot2)
+
+tree.data.plot %>%
+# filter(!(site %in% "Arville")) %>%
+ ggplot() +
+ aes(x = Basal_Area_20m,
+     y = perc_broad_20m, colour = site) +
+ geom_point(aes(shape = site), 
+ size = 2.5) +
+  scale_shape_manual(values=c(15, 16, 17, 18, 20)) +
+  scale_color_manual(values=c("#FFE74C", "#FF5964", "#92B4A7", "#38618C", "#35A7FF")) +
+ labs(x = "Forest density (Basal Area)", y = "Broadleaved component (%)") +
+ theme_minimal() +
+ theme(axis.title.y = element_text(size = 16L), axis.title.x = element_text(size = 16L))
+
+rm(list = ls())
+```
+

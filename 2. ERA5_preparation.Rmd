@@ -1,0 +1,162 @@
+---
+title: "ERA5"
+author: "Joan Diaz Calafat"
+date: "1/10/2022"
+output: pdf_document
+---
+
+Load packages:
+
+```{r}
+library(raster)
+library(reshape2)
+```
+
+# External temperature from ERA5 climatic models for offset calcualtion
+
+First, load the coordinate data of our experimental forests:
+
+```{r}
+df <- read.table(file = "./ERA5/coordinates.txt", header = T)
+
+# And keep only lat and lon columns:
+coordinates <- data.frame(xcoords = df$lon, ycoords = df$lat)
+```
+
+Load climatic ERA5 model:
+Data source: https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land?tab=overview and https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
+
+```{r}
+air.temp.nc <- brick("./ERA5/ERA5_mean.nc")
+max.temp.nc <- brick("./ERA5/ERA5_maxmin.nc", varname = "mx2t")
+min.temp.nc <- brick("./ERA5/ERA5_maxmin.nc", varname = "mn2t")
+soil.temp.nc <- brick("./ERA5/ERA5_maxmin.nc", varname = "stl1")
+wind.nc <- brick("./ERA5/ERA5_wind.nc")
+```
+And subset the ERA5 data to our climatic extent (earliest date: 2019-09-01; latest date: 2021-07-03).
+
+```{r}
+air.temp.nc <- air.temp.nc[[which(getZ(air.temp.nc) >= as.Date("2019-09-01") & getZ(air.temp.nc) <= as.Date("2021-07-03"))]]
+
+max.temp.nc <- max.temp.nc[[which(getZ(max.temp.nc) >= as.Date("2019-09-01") & getZ(max.temp.nc) <= as.Date("2021-07-03"))]]
+
+min.temp.nc <- min.temp.nc[[which(getZ(min.temp.nc) >= as.Date("2019-09-01") & getZ(min.temp.nc) <= as.Date("2021-07-03"))]]
+
+soil.temp.nc <- soil.temp.nc[[which(getZ(soil.temp.nc) >= as.Date("2019-09-01") & getZ(soil.temp.nc) <= as.Date("2021-07-03"))]]
+
+wind.nc <- wind.nc[[which(getZ(wind.nc) >= as.Date("2019-09-01") & getZ(wind.nc) <= as.Date("2021-07-03"))]]
+```
+
+Convert coordinates to spatial points: 
+
+```{r}
+coordinates <- SpatialPoints(coords = coordinates, proj4string = crs(air.temp.nc))
+```
+
+Extract data from experimental forest coordinates:
+
+```{r}
+era5.air.temp <- data.frame(raster::extract(air.temp.nc, coordinates))
+
+era5.max.temp <- data.frame(raster::extract(max.temp.nc, coordinates))
+
+era5.min.temp <- data.frame(raster::extract(min.temp.nc, coordinates))
+
+era5.soil.temp <- data.frame(raster::extract(soil.temp.nc, coordinates))
+
+wind <- data.frame(raster::extract(wind.nc, coordinates))
+
+rm(air.temp.nc)
+rm(max.temp.nc)
+rm(min.temp.nc)
+rm(soil.temp.nc)
+rm(coordinates)
+rm(wind.nc)
+```
+
+Format macroclimate data base:
+
+```{r}
+#detach(package:reshape)
+
+rownames(era5.air.temp) <- df$Plot
+era5.air.temp <- data.frame(t(era5.air.temp))
+era5.air.temp$hour <- rownames(era5.air.temp)
+era5.air.temp$hour <- substr(era5.air.temp$hour, 2,11)
+era5.air.temp <- melt(era5.air.temp, variable.name = "site", value.name = "air_temp")
+names(era5.air.temp) <- c("date", "site", "air_temp")
+era5.air.temp$air_temp <- era5.air.temp$air_temp-273.15 # Kelvin to celsius
+
+rownames(era5.max.temp) <- df$Plot
+era5.max.temp <- data.frame(t(era5.max.temp))
+era5.max.temp$hour <- rownames(era5.max.temp)
+era5.max.temp$hour <- substr(era5.max.temp$hour, 2,11)
+era5.max.temp <- melt(era5.max.temp, variable.name = "site", value.name = "max_temp")
+names(era5.max.temp) <- c("date", "site", "max_temp")
+era5.max.temp$max_temp <- era5.max.temp$max_temp-273.15 # Kelvin to celsius
+
+rownames(era5.min.temp) <- df$Plot
+era5.min.temp <- data.frame(t(era5.min.temp))
+era5.min.temp$hour <- rownames(era5.min.temp)
+era5.min.temp$hour <- substr(era5.min.temp$hour, 2,11)
+era5.min.temp <- melt(era5.min.temp, variable.name = "site", value.name = "min_temp")
+names(era5.min.temp) <- c("date", "site", "min_temp")
+era5.min.temp$min_temp <- era5.min.temp$min_temp-273.15 # Kelvin to celsius
+
+rownames(era5.soil.temp) <- df$Plot
+era5.soil.temp <- data.frame(t(era5.soil.temp))
+era5.soil.temp$hour <- rownames(era5.soil.temp)
+era5.soil.temp$hour <- substr(era5.soil.temp$hour, 2,11)
+era5.soil.temp <- melt(era5.soil.temp, variable.name = "site", value.name = "soil_temp")
+names(era5.soil.temp) <- c("date", "site", "soil_temp")
+era5.soil.temp$soil_temp <- era5.soil.temp$soil_temp-273.15 # Kelvin to celsius
+
+rownames(wind) <- df$Plot
+wind <- data.frame(t(wind))
+wind$hour <- rownames(wind)
+wind$hour <- substr(wind$hour, 2,11)
+wind <- melt(wind, variable.name = "site", value.name = "wind")
+names(wind) <- c("date", "site", "wind")
+
+rm(df)
+```
+
+Temperature data in ERA5 has been downloaded at an hourly basis.
+Before merging all ERA5 temperatures, we want to aggregate them by date, and differently depending on the temperature variable (i.e. calculate the mean for the average daily temperature, but the min for all the min values recorded by day for the minimum daily temperature). We will also rename the "hour" variable to "Date".
+
+```{r}
+era5.air.temp <- aggregate(list(era5_air = era5.air.temp$air_temp), by = list(Date = era5.air.temp$date, site = era5.air.temp$site), FUN = mean)
+
+era5.max.temp <- aggregate(list(era5_max = era5.max.temp$max_temp), by = list(Date = era5.max.temp$date, site = era5.max.temp$site), FUN = max)
+
+era5.min.temp <- aggregate(list(era5_min = era5.min.temp$min_temp), by = list(Date = era5.min.temp$date, site = era5.min.temp$site), FUN = min)
+
+era5.soil.temp <- aggregate(list(era5_soil = era5.soil.temp$soil_temp), by = list(Date = era5.soil.temp$date, site = era5.soil.temp$site), FUN = mean)
+
+wind <- aggregate(list(wind = wind$wind), by = list(Date = wind$date, site = wind$site), FUN = min)
+```
+
+And now we can merge such data:
+
+```{r}
+library(reshape)
+era5.temp <- merge_recurse(list(era5.air.temp, era5.max.temp, era5.min.temp, era5.soil.temp, wind))
+```
+
+Now we need to make dates into the same format as in the other datasets.
+Currently, in the ERA5 R object, dates appear as YYYY.MM.DD. We want "-" instead of "." separators. Also, we will turn this variable into a POSIXct class.
+
+```{r}
+era5.temp$Date <- gsub(".", "-", era5.temp$Date, fixed = TRUE)
+
+era5.temp$Date <- as.POSIXct(era5.temp$Date, format = "%Y-%m-%d")
+```
+
+Export the dataset:
+
+```{r}
+write.csv(era5.temp, file = "./DATASETS/ERA5_temp.csv", row.names = FALSE, quote = FALSE)
+
+rm(list = ls())
+```
+

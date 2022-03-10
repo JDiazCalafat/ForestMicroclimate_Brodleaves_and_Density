@@ -1,0 +1,302 @@
+---
+title: "Models"
+author: "Joan Diaz Calafat"
+date: "1/10/2022"
+output: pdf_document
+---
+
+Load packages:
+
+```{r}
+library(lubridate)
+```
+
+
+Load data:
+
+```{r}
+tree.temp <- read.csv("./DATASETS/tree_temp.csv", header = TRUE)
+```
+
+Calculate month:
+
+```{r}
+tree.temp$month <- month(tree.temp$Date)
+```
+
+Remove all column variables for data between 10 and 20 m raius:
+
+```{r}
+tree.temp <- tree.temp[,which(colnames(tree.temp) %in% c("site", "Plot", "Date", "location", "vegper", "month", "Temp.mean", "Temp.min", "Temp.max", "era5_air", "era5_air", "era5_max", "era5_min", "era5_soil", "air_off", "min_off", "max_off", "soil_off", "Basal_Area_20m", "Basal_Area_19m", "Basal_Area_18m", "Basal_Area_17m", "Basal_Area_16m", "Basal_Area_15m", "Basal_Area_14m", "Basal_Area_13m" ,"Basal_Area_12m", "Basal_Area_11m", "Basal_Area_10m", "Basal_Area_9m", "Basal_Area_8m", "Basal_Area_7m", "Basal_Area_6m", "Basal_Area_5m", "Basal_Area_4m", "nci20m", "nci19m", "nci18m", "nci17m", "nci16m", "nci15m", "nci14m", "nci13m", "nci12m", "nci11m", "nci10m", "nci9m", "nci8m", "nci7m", "nci6m", "nci5m","nci4m","CanOpen", "prev_av_temp", "wind", "perc_broad_20m", "perc_broad_19m", "perc_broad_18m", "perc_broad_17m", "perc_broad_16m", "perc_broad_15m", "perc_broad_14m", "perc_broad_13m", "perc_broad_12m", "perc_broad_11m", "perc_broad_10m", "perc_broad_9m", "perc_broad_8m", "perc_broad_7m", "perc_broad_6m", "perc_broad_5m", "perc_broad_4m"))]
+```
+
+Separate air and soil loggers:
+
+```{r}
+tree.temp.a <- tree.temp[which(tree.temp$location == "a"),]
+tree.temp.s <- tree.temp[which(tree.temp$location == "s"),]
+```
+
+And vegetation periods:
+
+```{r}
+tree.temp.a.vegper <- tree.temp.a[which(tree.temp.a$vegper == TRUE),]
+tree.temp.a.novegper <- tree.temp.a[which(tree.temp.a$vegper == FALSE),]
+tree.temp.s.vegper <- tree.temp.s[which(tree.temp.s$vegper == TRUE),]
+tree.temp.s.novegper <- tree.temp.s[which(tree.temp.s$vegper == FALSE),]
+```
+
+Warmest and coldest month:
+
+```{r}
+tree.temp.a.jul <- tree.temp.a[which(tree.temp.a$month == 7),]
+tree.temp.a.jan <- tree.temp.a[which(tree.temp.a$month == 1),]
+
+tree.temp.s.jul <- tree.temp.s[which(tree.temp.s$month == 7),]
+tree.temp.s.jan <- tree.temp.s[which(tree.temp.s$month == 1),]
+```
+
+
+# Models:
+
+```{r}
+library(gamm4)
+
+tree.temp.a.jul$site <- as.factor(tree.temp.a.jul$site)
+
+model1 <- gamm4(min_off ~ s(CanOpen,perc_broad_10m) + site + wind + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model1$gam)
+AIC(model1$mer)
+
+
+model2 <- gamm4(air_off ~ s(CanOpen,perc_broad_10m) + site + wind, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model2$gam)
+AIC(model2$mer)
+
+
+model3 <- gamm4(max_off ~ s(CanOpen,perc_broad_10m) + site, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model3$gam)
+AIC(model3$mer)
+
+
+model4 <- gamm4(min_off ~ s(CanOpen,perc_broad_10m) + site + wind, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model4$gam)
+AIC(model4$mer)
+
+
+model5 <- gamm4(air_off ~ s(CanOpen,perc_broad_10m) + site + wind + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model5$gam)
+AIC(model5$mer)
+
+
+model6 <- gamm4(max_off ~ s(CanOpen,perc_broad_10m) + site + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model6$gam)
+AIC(model6$mer)
+
+
+
+plot(model1$gam, scheme = 2)
+gam.check(model4$gam)
+
+plot(residuals(model1$gam), col = tree.temp.a.jul$site)
+
+plot(residuals(model1$gam)~tree.temp.a.jul$site)
+
+plot(tree.temp.a.jul$max_off~tree.temp.a.jul$era5_max, col = tree.temp.a.jul$site)
+```
+
+```{r}
+par(mfrow=c(3,2))
+
+plot(model1$gam, scheme = 2, lwd = 3, main = "Min temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0.2, hcolors=heat.colors(999, rev =T), rug=T)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4)
+
+plot(model4$gam, scheme = 2, lwd = 3, main = "Min temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0.2, hcolors=heat.colors(999, rev =T), rug=T)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 15)
+
+plot(model2$gam, scheme = 2, lwd = 3, main = "Mean temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0.2, hcolors=heat.colors(999, rev =T), rug=T)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 16)
+
+plot(model5$gam, scheme = 2, lwd = 3, main = "Mean temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0.2, hcolors=heat.colors(999, rev =T), rug=T)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 17)
+
+plot(model3$gam, scheme = 2, lwd = 3, main = "Max temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0.2, hcolors=heat.colors(999, rev =T), rug=T)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 24)
+
+plot(model6$gam, scheme = 2, lwd = 3, main = "Max temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0.2, hcolors=heat.colors(999, rev =T), rug=T)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 20)
+```
+
+# separate smoothers
+
+```{r}
+library(gamm4)
+
+tree.temp.a.jul$site <- as.factor(tree.temp.a.jul$site)
+
+model1 <- gamm4(min_off ~ s(CanOpen) + s(perc_broad_20m) + site, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model1$gam)
+AIC(model1$mer)
+
+
+model2 <- gamm4(air_off ~ s(CanOpen) + s(perc_broad_20m) + site, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model2$gam)
+AIC(model2$mer)
+
+
+model3 <- gamm4(max_off ~ s(CanOpen) + s(perc_broad_20m) + site, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model3$gam)
+AIC(model3$mer)
+
+
+model4 <- gamm4(min_off ~ s(CanOpen) + s(perc_broad_20m) + site, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model4$gam)
+AIC(model4$mer)
+
+
+model5 <- gamm4(air_off ~ s(CanOpen) + s(perc_broad_20m) + site, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model5$gam)
+AIC(model5$mer)
+
+
+model6 <- gamm4(max_off ~ s(CanOpen) + s(perc_broad_20m) + site, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model6$gam)
+AIC(model6$mer)
+```
+
+# Just linear components
+
+```{r}
+library(gamm4)
+
+tree.temp.a.jul$site <- as.factor(tree.temp.a.jul$site)
+
+model1 <- gamm4(min_off ~ CanOpen*perc_broad_20m + site, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model1$gam)
+AIC(model1$mer)
+
+
+model2 <- gamm4(air_off ~ CanOpen + perc_broad_20m + site, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model2$gam)
+AIC(model2$mer)
+
+
+model3 <- gamm4(max_off ~ CanOpen + perc_broad_20m + site, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model3$gam)
+AIC(model3$mer)
+
+
+model4 <- gamm4(min_off ~ CanOpen + perc_broad_20m + site, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model4$gam)
+AIC(model4$mer)
+
+
+model5 <- gamm4(air_off ~ CanOpen + perc_broad_20m + site, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model5$gam)
+AIC(model5$mer)
+
+
+model6 <- gamm4(max_off ~ CanOpen + perc_broad_20m + site, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model6$gam)
+AIC(model6$mer)
+```
+# Basal area instead of Canopy openness
+
+```{r}
+library(gamm4)
+
+tree.temp.a.jul$site <- as.factor(tree.temp.a.jul$site)
+
+model1 <- gamm4(min_off ~ s(CanOpen,perc_broad_20m) + site , random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model1$gam)
+AIC(model1$mer)
+
+
+model2 <- gamm4(air_off ~ s(CanOpen,perc_broad_20m) + site , random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model2$gam)
+AIC(model2$mer)
+
+
+model3 <- gamm4(max_off ~ s(CanOpen,perc_broad_20m) + site , random = ~ (1|site:Plot), data = tree.temp.a.jul)
+summary(model3$gam)
+AIC(model3$mer)
+
+
+model4 <- gamm4(min_off ~ s(CanOpen,perc_broad_20m) + site , random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model4$gam)
+AIC(model4$mer)
+
+
+model5 <- gamm4(air_off ~ s(CanOpen,perc_broad_20m) + site , random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model5$gam)
+AIC(model5$mer)
+
+
+model6 <- gamm4(max_off ~ s(CanOpen,perc_broad_20m) + site , random = ~ (1|site:Plot), data = tree.temp.a.jan)
+summary(model6$gam)
+AIC(model6$mer)
+```
+
+Plots:
+
+```{r}
+par(mfrow=c(2,3))
+
+plot(model1$gam, scheme = 2, lwd = 3, main = "Min temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0, hcolors=heat.colors(999, rev =T), rug=F)
+
+plot(model2$gam, scheme = 2, lwd = 3, main = "Mean temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0, hcolors=heat.colors(999, rev =T), rug=F)
+
+plot(model3$gam, scheme = 2, lwd = 3, main = "Max temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0, hcolors=heat.colors(999, rev =T), rug=F)
+
+plot(model4$gam, scheme = 2, lwd = 3, main = "Min temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0, hcolors=heat.colors(999, rev =T), rug=F)
+
+plot(model5$gam, scheme = 2, lwd = 3, main = "Mean temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0, hcolors=heat.colors(999, rev =T), rug=F)
+
+plot(model6$gam, scheme = 2, lwd = 3, main = "Max temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, cex.main = 2, too.far = 0, hcolors=heat.colors(999, rev =T), rug=F)
+```
+
+
+
+# What about soil temperature?
+
+```{r}
+tree.temp.a.jul$site <- as.factor(tree.temp.a.jul$site)
+
+model1 <- gamm4(soil_off ~ s(Basal_Area_10m,perc_broad_20m) + site, random = ~ (1|site:Plot), data = tree.temp.s.jan)
+
+
+summary(model1$gam)
+AIC(model1$mer)
+plot(model1$gam, scheme = 2)
+
+
+model2 <- gamm4(soil_off ~ s(CanOpen,perc_broad_20m) + site + wind, random = ~ (1|site:Plot), data = tree.temp.s.jan)
+
+
+summary(model2$gam)
+AIC(model2$mer)
+plot(model2$gam, scheme = 2)
+
+model3 <- gamm4(soil_off ~ s(CanOpen,perc_broad_20m) + site  + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.s.jan)
+
+
+summary(model3$gam)
+AIC(model3$mer)
+plot(model3$gam, scheme = 2)
+
+model4 <- gamm4(soil_off ~ s(CanOpen,perc_broad_20m) + site + wind + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.s.jan)
+
+
+summary(model4$gam)
+AIC(model4$mer)
+plot(model4$gam, scheme = 2)
+
+min(tree.temp.s$Temp.min)
+```
+

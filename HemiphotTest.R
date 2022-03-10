@@ -42,7 +42,7 @@ rm(list = ls())
 
 ### set working directory
 ### need to change to your own settings!
-setwd("C:/Users/jndi0002/Documents/R/GITHUB/Trees_and_Climate/Hemispherical_pictures/Siljan") # set your working directory
+setwd("C:/Users/jndi0002/Documents/R/GITHUB/Trees_and_Climate/") # set your working directory
 
 
 
@@ -57,6 +57,7 @@ days = seq(15,360,30)               #roughly each mid of the 12 months
 #######END          load libraries and source files          ##########
 
 
+setwd("C:/Users/jndi0002/Documents/R/GITHUB/Trees_and_Climate/Hemispherical_pictures/Siljan") # set your working directory
 
 
 
