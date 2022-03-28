@@ -32,6 +32,8 @@ max.temp.nc <- brick("./ERA5/ERA5_maxmin.nc", varname = "mx2t")
 min.temp.nc <- brick("./ERA5/ERA5_maxmin.nc", varname = "mn2t")
 soil.temp.nc <- brick("./ERA5/ERA5_maxmin.nc", varname = "stl1")
 wind.nc <- brick("./ERA5/ERA5_wind.nc")
+snow.nc <- brick("./ERA5/ERA5_snowprec.nc", varname = "sd")
+prec.nc <- brick("./ERA5/ERA5_snowprec.nc", varname = "tp")
 ```
 And subset the ERA5 data to our climatic extent (earliest date: 2019-09-01; latest date: 2021-07-03).
 
@@ -45,6 +47,10 @@ min.temp.nc <- min.temp.nc[[which(getZ(min.temp.nc) >= as.Date("2019-09-01") & g
 soil.temp.nc <- soil.temp.nc[[which(getZ(soil.temp.nc) >= as.Date("2019-09-01") & getZ(soil.temp.nc) <= as.Date("2021-07-03"))]]
 
 wind.nc <- wind.nc[[which(getZ(wind.nc) >= as.Date("2019-09-01") & getZ(wind.nc) <= as.Date("2021-07-03"))]]
+
+snow.nc <- snow.nc[[which(getZ(snow.nc) >= as.Date("2019-09-01") & getZ(snow.nc) <= as.Date("2021-07-03"))]]
+
+prec.nc <- prec.nc[[which(getZ(prec.nc) >= as.Date("2019-09-01") & getZ(prec.nc) <= as.Date("2021-07-03"))]]
 ```
 
 Convert coordinates to spatial points: 
@@ -66,12 +72,18 @@ era5.soil.temp <- data.frame(raster::extract(soil.temp.nc, coordinates))
 
 wind <- data.frame(raster::extract(wind.nc, coordinates))
 
+snow <- data.frame(raster::extract(snow.nc, coordinates))
+
+prec <- data.frame(raster::extract(prec.nc, coordinates))
+
 rm(air.temp.nc)
 rm(max.temp.nc)
 rm(min.temp.nc)
 rm(soil.temp.nc)
-rm(coordinates)
 rm(wind.nc)
+rm(snow.nc)
+rm(prec.nc)
+rm(coordinates)
 ```
 
 Format macroclimate data base:
@@ -118,6 +130,20 @@ wind$hour <- substr(wind$hour, 2,11)
 wind <- melt(wind, variable.name = "site", value.name = "wind")
 names(wind) <- c("date", "site", "wind")
 
+rownames(snow) <- df$Plot
+snow <- data.frame(t(snow))
+snow$hour <- rownames(snow)
+snow$hour <- substr(snow$hour, 2,11)
+snow <- melt(snow, variable.name = "site", value.name = "snow")
+names(snow) <- c("date", "site", "snow")
+
+rownames(prec) <- df$Plot
+prec <- data.frame(t(prec))
+prec$hour <- rownames(prec)
+prec$hour <- substr(prec$hour, 2,11)
+prec <- melt(prec, variable.name = "site", value.name = "prec")
+names(prec) <- c("date", "site", "prec")
+
 rm(df)
 ```
 
@@ -133,14 +159,18 @@ era5.min.temp <- aggregate(list(era5_min = era5.min.temp$min_temp), by = list(Da
 
 era5.soil.temp <- aggregate(list(era5_soil = era5.soil.temp$soil_temp), by = list(Date = era5.soil.temp$date, site = era5.soil.temp$site), FUN = mean)
 
-wind <- aggregate(list(wind = wind$wind), by = list(Date = wind$date, site = wind$site), FUN = min)
+wind <- aggregate(list(wind = wind$wind), by = list(Date = wind$date, site = wind$site), FUN = mean)
+
+snow <- aggregate(list(snow = snow$snow), by = list(Date = snow$date, site = snow$site), FUN = mean)
+
+prec <- aggregate(list(prec = prec$prec), by = list(Date = prec$date, site = prec$site), FUN = mean)
 ```
 
 And now we can merge such data:
 
 ```{r}
 library(reshape)
-era5.temp <- merge_recurse(list(era5.air.temp, era5.max.temp, era5.min.temp, era5.soil.temp, wind))
+era5.temp <- merge_recurse(list(era5.air.temp, era5.max.temp, era5.min.temp, era5.soil.temp, wind, snow, prec))
 ```
 
 Now we need to make dates into the same format as in the other datasets.

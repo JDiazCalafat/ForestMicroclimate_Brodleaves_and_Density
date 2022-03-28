@@ -9,7 +9,7 @@ ERA5.temp <- read.csv("./DATASETS/ERA5_temp.csv", header = TRUE)
 ```
 
 ###############
-Calculate mean temperature for the five previous days
+Calculate mean temperature and precipitation for the five previous days
 
 ```{r}
 library(dplyr)
@@ -20,6 +20,15 @@ ERA5.temp <- ERA5.temp %>%
     dplyr::arrange(desc(site)) %>% 
     dplyr::group_by(site) %>% 
     dplyr::mutate(prev_av_temp = lag(zoo::rollmean(era5_air, 
+                                               k = 5, 
+                                               fill = NA), n = 3)) %>% 
+  dplyr::ungroup()
+
+ERA5.temp <- ERA5.temp %>%
+    dplyr::arrange(Date) %>% 
+    dplyr::arrange(desc(site)) %>% 
+    dplyr::group_by(site) %>% 
+    dplyr::mutate(prev_av_prec = lag(zoo::rollmean(prec, 
                                                k = 5, 
                                                fill = NA), n = 3)) %>% 
   dplyr::ungroup()
@@ -188,6 +197,7 @@ geom_line(aes(y = era5_air), colour = "red", lwd = 2) +
 
 rm(arville)
 rm(arville.week.warm)
+rm(macroclimate.arville.warm)
 ```
 
 Hochwald:
@@ -299,6 +309,7 @@ geom_line(aes(y = era5_air), colour = "red", lwd = 2) +
 
 rm(hochwald)
 rm(hochwald.week.warm)
+rm(macroclimate.hochwald.warm)
 ```
 
 Vivarp:
@@ -418,6 +429,7 @@ geom_line(aes(y = era5_air), colour = "red", lwd = 2) +
 
 rm(vivarp)
 rm(vivarp.week.warm)
+rm(macroclimate.vivarp.warm)
 ```
 
 Siljan:
@@ -529,6 +541,7 @@ geom_line(aes(y = era5_air), colour = "red", lwd = 2) +
 
 rm(siljan)
 rm(siljan.week.warm)
+rm(macroclimate.siljan.warm)
 ```
 
 Sandsjö:
@@ -646,4 +659,10 @@ geom_line(aes(y = era5_air), colour = "red", lwd = 2) +
 
 rm(sandsjo)
 rm(sandsjo.week.warm)
+rm(macroclimate.sandsjo.warm)
+
+rm(onecoldweek)
+rm(onewarmweek)
+
+rm(tree.temp)
 ```

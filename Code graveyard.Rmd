@@ -1,0 +1,287 @@
+---
+title: "Code graveyard"
+author: "Joan Diaz Calafat"
+date: "3/18/2022"
+output: html_document
+---
+
+# Data filling:
+
+## Vivarp
+
+```{r}
+# Separate soil and air logger data
+vivarp.temp.a <- vivarp.temp[which(vivarp.temp$location == "a"),]
+
+vivarp.temp.s <- vivarp.temp[which(vivarp.temp$location == "s"),]
+
+rm(vivarp.temp)
+
+vivarp.completeness.a <- dcast(vivarp.temp.a, Date~Plot, fun.aggregate = mean, value.var = "Temp")
+
+vivarp.completeness.s <- dcast(vivarp.temp.s, Date~Plot, fun.aggregate = mean, value.var = "Temp")
+
+vis_miss(vivarp.completeness.a, warn_large_data = FALSE)
+vis_miss(vivarp.completeness.s, warn_large_data = FALSE)
+
+#rm(vivarp.completeness.a)
+#rm(vivarp.completeness.s)
+```
+
+The following data gaps (<10% of logger's data) need to be filled:
+Air loggers: 35 (1.64% of data missing)
+Soil loggers: 23, 38, 39 (5.45% of data missing in all cases)
+
+We will use the mean of daily mean temperatures for all the loggers in Vivarp when filling these gaps, we will fix these when calculating daily averages.
+
+```{r}
+# Get Dates with missing values for plot 35a in Vivarp
+missing.vivarp.35a <- vivarp.completeness.a[is.na(vivarp.completeness.a$`35`),]$Date
+
+# Get all the raw data from all loggers but 35 a for these dates
+tofill.vivarp.35a <- vivarp.temp.a[which(vivarp.temp.a$Date %in% missing.vivarp.35a),]
+
+# Calculate the mean across all plots per date in the missing dates
+filled.vivarp.35a <- aggregate(list(Temp = tofill.vivarp.35a$Temp), by = list(Date = tofill.vivarp.35a$Date), FUN = mean)
+
+# Create extra variables before merging to vivarp.temp.a
+filled.vivarp.35a$Plot <- 35
+filled.vivarp.35a$time <- NA
+filled.vivarp.35a$site <- "Vivarp"
+filled.vivarp.35a$location <- "a"
+
+vivarp.temp.a <- rbind(vivarp.temp.a, filled.vivarp.35a)
+
+# Same for 23s
+
+missing.vivarp.23s <- vivarp.completeness.s[is.na(vivarp.completeness.s$`23`),]$Date
+
+tofill.vivarp.23s <- vivarp.temp.s[which(vivarp.temp.s$Date %in% missing.vivarp.23s),]
+
+filled.vivarp.23s <- aggregate(list(Temp = tofill.vivarp.23s$Temp), by = list(Date = tofill.vivarp.23s$Date), FUN = mean)
+
+filled.vivarp.23s$Plot <- 23
+filled.vivarp.23s$time <- NA
+filled.vivarp.23s$site <- "Vivarp"
+filled.vivarp.23s$location <- "s"
+
+vivarp.temp.s <- rbind(vivarp.temp.s, filled.vivarp.23s)
+
+# Same for 38s
+
+missing.vivarp.38s <- vivarp.completeness.s[is.na(vivarp.completeness.s$`38`),]$Date
+
+tofill.vivarp.38s <- vivarp.temp.s[which(vivarp.temp.s$Date %in% missing.vivarp.38s),]
+
+filled.vivarp.38s <- aggregate(list(Temp = tofill.vivarp.38s$Temp), by = list(Date = tofill.vivarp.38s$Date), FUN = mean)
+
+filled.vivarp.38s$Plot <- 38
+filled.vivarp.38s$time <- NA
+filled.vivarp.38s$site <- "Vivarp"
+filled.vivarp.38s$location <- "s"
+
+vivarp.temp.s <- rbind(vivarp.temp.s, filled.vivarp.38s)
+
+# Same for 39s
+
+missing.vivarp.39s <- vivarp.completeness.s[is.na(vivarp.completeness.s$`39`),]$Date
+
+tofill.vivarp.39s <- vivarp.temp.s[which(vivarp.temp.s$Date %in% missing.vivarp.39s),]
+
+filled.vivarp.39s <- aggregate(list(Temp = tofill.vivarp.39s$Temp), by = list(Date = tofill.vivarp.39s$Date), FUN = mean)
+
+filled.vivarp.39s$Plot <- 39
+filled.vivarp.39s$time <- NA
+filled.vivarp.39s$site <- "Vivarp"
+filled.vivarp.39s$location <- "s"
+
+vivarp.temp.s <- rbind(vivarp.temp.s, filled.vivarp.39s)
+
+# Merge everything
+
+vivarp.temp <- rbind(vivarp.temp.a, vivarp.temp.s)
+
+# Clean environment
+rm(missing.vivarp.23s)
+rm(missing.vivarp.35a)
+rm(missing.vivarp.38s)
+rm(missing.vivarp.39s)
+rm(tofill.vivarp.23s)
+rm(tofill.vivarp.35a)
+rm(tofill.vivarp.38s)
+rm(tofill.vivarp.39s)
+rm(filled.vivarp.23s)
+rm(filled.vivarp.35a)
+rm(filled.vivarp.38s)
+rm(filled.vivarp.39s)
+rm(vivarp.completeness.a)
+rm(vivarp.completeness.s)
+rm(vivarp.temp.a)
+rm(vivarp.temp.s)
+```
+
+# Vegetation period calculation
+
+First, we need to divide our daily temperatures across a full year in the vegetation period. We understand that the vegetation period starts when the average daily temperature is higher than 5C. For this, we need to pull data from all the loggers as well. As temperature sometimes fluctuates, we will allow up to three days < 5 daily mean before considering the vegetation period over, only if temperature raises above 5C after these days. 
+
+## Arville
+
+*MAYBE WE NEED TO REPEAT THIS ONCE WE GET A WEATHER STATION AND INCLUDE THE CLEAR-CUT LOGGERS IN THE DAILY MEAN AVERAGES!!!*
+
+```{r}
+arville.temp.a <- arville.temp[which(arville.temp$location == "a"),]
+
+arville.global.temp.a <- aggregate(list(Temp.mean = arville.temp.a$Temp.mean), by = list(Date = arville.temp.a$Date), FUN = mean)
+
+arville.global.temp.a <- arville.global.temp.a %>% mutate(vegper = rollapply(Temp.mean >= 5, 4, all, align = "left", fill = FALSE))
+
+arville.global.temp.a$Date <- as.POSIXct(arville.global.temp.a$Date)
+
+ggplot(aes(x = Date, y = Temp.mean), data = arville.global.temp.a) + geom_line() + geom_hline(yintercept=5, linetype = "dashed", col = "red") + geom_vline(xintercept = as.POSIXct(as.Date(c("2020-04-03", "2020-11-28"))), linetype="solid", color = "blue", size=0.5)
+```
+
+Vegetation period goes from 2020-04-03 to 2020-11-28.
+
+Correct vegetation period variable to get rid of fluctuations in the dataset that includes all plots. Then remove the dataset that averaged everything.
+
+```{r}
+veg.per.arville <- seq(from = as.POSIXct("2020-04-03 00:00:00", format = "%Y-%m-%d %H:%M:%S"), to = as.POSIXct("2020-11-28 00:00:00", format = "%Y-%m-%d %H:%M:%S"), by = "1 day")
+
+arville.temp$Date <- as.POSIXct(arville.temp$Date)
+
+arville.temp$vegper <- ifelse(arville.temp$Date %in% veg.per.arville, TRUE,FALSE)
+
+rm(arville.global.temp.a)
+rm(arville.temp.a)
+```
+
+## Hochwald
+
+```{r}
+hochwald.temp.a <- hochwald.temp[which(hochwald.temp$location == "a"),]
+
+hochwald.global.temp.a <- aggregate(list(Temp.mean = hochwald.temp.a$Temp.mean), by = list(Date = hochwald.temp.a$Date), FUN = mean)
+
+hochwald.global.temp.a <- hochwald.global.temp.a %>% mutate(vegper = rollapply(Temp.mean >= 5, 4, all, align = "left", fill = FALSE))
+
+hochwald.global.temp.a$Date <- as.POSIXct(hochwald.global.temp.a$Date)
+
+ggplot(aes(x = Date, y = Temp.mean), data = hochwald.global.temp.a) + geom_line() + geom_hline(yintercept=5, linetype = "dashed", col = "red") + geom_vline(xintercept = as.POSIXct(as.Date(c("2020-04-04", "2020-11-19"))), linetype="solid", color = "blue", size=0.5)
+```
+
+Vegetation period goes from 2020-04-04 to 2020-11-19.
+
+Correct vegetation period variable to get rid of fluctuations in the dataset that includes all plots. Then remove the dataset that averaged everything.
+
+```{r}
+veg.per.hochwald <- seq(from = as.POSIXct("2020-04-04 00:00:00", format = "%Y-%m-%d %H:%M:%S"), to = as.POSIXct("2020-11-19 00:00:00", format = "%Y-%m-%d %H:%M:%S"), by = "1 day")
+
+hochwald.temp$Date <- as.POSIXct(hochwald.temp$Date)
+
+hochwald.temp$vegper <- ifelse(hochwald.temp$Date %in% veg.per.hochwald, TRUE,FALSE)
+
+rm(hochwald.global.temp.a)
+rm(hochwald.temp.a)
+```
+
+## Vivarp
+
+```{r}
+vivarp.temp.a <- vivarp.temp[which(vivarp.temp$location == "a"),]
+
+vivarp.global.temp.a <- aggregate(list(Temp.mean = vivarp.temp.a$Temp.mean), by = list(Date = vivarp.temp.a$Date), FUN = mean)
+
+vivarp.global.temp.a <- vivarp.global.temp.a %>% mutate(vegper = rollapply(Temp.mean >= 5, 4, all, align = "left", fill = FALSE))
+
+vivarp.global.temp.a$Date <- as.POSIXct(vivarp.global.temp.a$Date)
+
+ggplot(aes(x = Date, y = Temp.mean), data = vivarp.global.temp.a) + geom_line() + geom_hline(yintercept=5, linetype = "dashed", col = "red") + geom_vline(xintercept = as.POSIXct(as.Date(c("2020-11-27", "2021-04-15"))), linetype="solid", color = "blue", size=0.5)
+```
+
+In this case is more convenient to calculate the non-vegetation period: 2020-11-27 to 2021-04-15.
+
+Correct vegetation period variable to get rid of fluctuations in the dataset that includes all plots. Then remove the dataset that averaged everything.
+
+```{r}
+non.veg.per.vivarp <- seq(from = as.POSIXct("2020-11-27 00:00:00", format = "%Y-%m-%d %H:%M:%S"), to = as.POSIXct("2021-04-15 00:00:00", format = "%Y-%m-%d %H:%M:%S"), by = "1 day")
+
+vivarp.temp$Date <- as.POSIXct(vivarp.temp$Date)
+
+vivarp.temp$vegper <- ifelse(vivarp.temp$Date %in% non.veg.per.vivarp, FALSE,TRUE)
+
+rm(vivarp.global.temp.a)
+rm(vivarp.temp.a)
+```
+
+*REMEMBER THAT VIVARP USES DIFFERENT TIME PERIODS FOR AIR AND SOIL LOGGERS, AND THEREFORE SOME OF THE DATES IN THE SOIL LOGGESTS (THOSE NOT OVERLAPPING WITH THE AIR LOGGERS) HAVE NOT BEEN CHECKED TO BELONG TO THE VEGETATION PERIOD.*
+
+## Siljan
+
+```{r}
+siljan.temp.a <- siljan.temp[which(siljan.temp$location == "a"),]
+
+siljan.global.temp.a <- aggregate(list(Temp.mean = siljan.temp.a$Temp.mean), by = list(Date = siljan.temp.a$Date), FUN = mean)
+
+siljan.global.temp.a <- siljan.global.temp.a %>% mutate(vegper = rollapply(Temp.mean >= 5, 4, all, align = "left", fill = FALSE))
+
+siljan.global.temp.a$Date <- as.POSIXct(siljan.global.temp.a$Date)
+
+ggplot(aes(x = Date, y = Temp.mean), data = siljan.global.temp.a) + geom_line() + geom_hline(yintercept=5, linetype = "dashed", col = "red") + geom_vline(xintercept = as.POSIXct(as.Date(c("2019-10-03", "2020-05-15"))), linetype="solid", color = "blue", size=0.5)
+```
+
+The non-vegetation period: 2019-10-03 to 2020-05-15.
+
+Correct vegetation period variable to get rid of fluctuations in the dataset that includes all plots. Then remove the dataset that averaged everything.
+
+```{r}
+non.veg.per.siljan <- seq(from = as.POSIXct("2019-10-03 00:00:00", format = "%Y-%m-%d %H:%M:%S"), to = as.POSIXct("2020-05-15 00:00:00", format = "%Y-%m-%d %H:%M:%S"), by = "1 day")
+
+siljan.temp$Date <- as.POSIXct(siljan.temp$Date)
+
+siljan.temp$vegper <- ifelse(siljan.temp$Date %in% non.veg.per.siljan, FALSE,TRUE)
+
+rm(siljan.global.temp.a)
+rm(siljan.temp.a)
+```
+
+## Sandsjö
+
+```{r}
+sandsjo.temp.a <- sandsjo.temp[which(sandsjo.temp$location == "a"),]
+
+sandsjo.global.temp.a <- aggregate(list(Temp.mean = sandsjo.temp.a$Temp.mean), by = list(Date = sandsjo.temp.a$Date), FUN = mean)
+
+sandsjo.global.temp.a <- sandsjo.global.temp.a %>% mutate(vegper = rollapply(Temp.mean >= 5, 4, all, align = "left", fill = FALSE))
+
+sandsjo.global.temp.a$Date <- as.POSIXct(sandsjo.global.temp.a$Date)
+
+ggplot(aes(x = Date, y = Temp.mean), data = sandsjo.global.temp.a) + geom_line() + geom_hline(yintercept=5, linetype = "dashed", col = "red") + geom_vline(xintercept = as.POSIXct(as.Date(c("2019-09-19", "2020-05-20"))), linetype="solid", color = "blue", size=0.5)
+```
+
+The non-vegetation period: 2019-09-19 to 2020-05-20.
+
+Correct vegetation period variable to get rid of fluctuations in the dataset that includes all plots. Then remove the dataset that averaged everything.
+
+```{r}
+non.veg.per.sandsjo <- seq(from = as.POSIXct("2019-09-19 00:00:00", format = "%Y-%m-%d %H:%M:%S"), to = as.POSIXct("2020-05-20 00:00:00", format = "%Y-%m-%d %H:%M:%S"), by = "1 day")
+
+sandsjo.temp$Date <- as.POSIXct(sandsjo.temp$Date)
+
+sandsjo.temp$vegper <- ifelse(sandsjo.temp$Date %in% non.veg.per.sandsjo, FALSE,TRUE)
+
+rm(sandsjo.global.temp.a)
+rm(sandsjo.temp.a)
+```
+
+Merge these datasets with all the vegetation periods and divide them creating a dataset for temperatures within the vegetation period and a dataset for the temperatures outide such.
+
+Merge everything:
+```{r}
+temp.data <- rbind(arville.temp, hochwald.temp, vivarp.temp, siljan.temp, sandsjo.temp)
+
+rm(arville.temp)
+rm(hochwald.temp)
+rm(vivarp.temp)
+rm(siljan.temp)
+rm(sandsjo.temp)
+```
