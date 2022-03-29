@@ -570,19 +570,12 @@ model.meanair.jan.ba.all <- gamm4(air_off ~ s(Basal_Area_20m,perc_broad_20m) + s
 summary(model.meanair.jan.ba.all$gam)
 AIC(model.meanair.jan.ba.all$mer)
 
-# Snow (0.43) and prev_av_prec (0.27) not significant. Let's first remove snow:
+# Prev_av_prec is not significant (0.6). Let's remove it:
 
-model.meanair.jan.ba.nosnow <- gamm4(air_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.meanair.jan.ba.noprec <- gamm4(air_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
-summary(model.meanair.jan.ba.nosnow$gam)
-AIC(model.meanair.jan.ba.nosnow$mer)
-
-# Prev_av_prec is not significant (0.1). Let's remove it:
-
-model.meanair.jan.ba.nosnowprec <- gamm4(air_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.a.jan)
-
-summary(model.meanair.jan.ba.nosnowprec$gam)
-AIC(model.meanair.jan.ba.nosnowprec$mer)
+summary(model.meanair.jan.ba.noprec$gam)
+AIC(model.meanair.jan.ba.noprec$mer)
 
 
 plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
@@ -599,16 +592,9 @@ model.meanair.jan.co.all <- gamm4(air_off ~ s(CanOpen,perc_broad_20m) + s(Day) +
 summary(model.meanair.jan.co.all$gam)
 AIC(model.meanair.jan.co.all$mer)
 
-# Snow (0.43) and prev_av_prec (0.27) not significant. Let's first remove snow:
+# Prev_av_prec is not significant (0.6). Let's remove it:
 
-model.meanair.jan.co.nosnow <- gamm4(air_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
-
-summary(model.meanair.jan.co.nosnow$gam)
-AIC(model.meanair.jan.co.nosnow$mer)
-
-# Prev_av_prec is not significant (0.1). Let's remove it:
-
-model.meanair.jan.co.nosnowprec <- gamm4(air_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.meanair.jan.co.nosnowprec <- gamm4(air_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.meanair.jan.co.nosnowprec$gam)
 AIC(model.meanair.jan.co.nosnowprec$mer)
@@ -724,20 +710,10 @@ model.maxair.jul.ba.all <- gamm4(max_off ~ s(Basal_Area_20m,perc_broad_20m) + s(
 summary(model.maxair.jul.ba.all$gam)
 AIC(model.maxair.jul.ba.all$mer)
 
-# Prev_av_temp is not significant (0.1). Let's remove it.
-
-model.maxair.jul.ba.noprevtemp <- gamm4(max_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
-
-summary(model.maxair.jul.ba.noprevtemp$gam)
-AIC(model.maxair.jul.ba.noprevtemp$mer)
-
-
-plot(model.maxair.jul.ba.noprevtemp$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Basal Area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 # model residuals
-gam.check(model.maxair.jul.co.noprevtemp$gam)
+gam.check(model.maxair.jul.ba.all$gam)
 
 # canopy openness
 model.maxair.jul.co.all <- gamm4(max_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
@@ -745,15 +721,8 @@ model.maxair.jul.co.all <- gamm4(max_off ~ s(CanOpen,perc_broad_20m) + s(Day) + 
 summary(model.maxair.jul.co.all$gam)
 AIC(model.maxair.jul.co.all$mer)
 
-# Prev_av_temp is not significant (0.1). Let's remove it.
 
-model.maxair.jul.co.noprevtemp <- gamm4(max_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
-
-summary(model.maxair.jul.co.noprevtemp$gam)
-AIC(model.maxair.jul.co.noprevtemp$mer)
-
-
-plot(model.maxair.jul.co.noprevtemp$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -821,7 +790,7 @@ plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offs
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.maxair.jul.ba.noprevtemp$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Basal Area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -853,7 +822,7 @@ plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offs
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
-plot(model.maxair.jul.co.noprevtemp$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
