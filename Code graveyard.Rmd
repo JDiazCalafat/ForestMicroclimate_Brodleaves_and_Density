@@ -285,3 +285,62 @@ rm(vivarp.temp)
 rm(siljan.temp)
 rm(sandsjo.temp)
 ```
+
+
+Temporal autocorrelation?
+
+```{r}
+test1 <- start_event(tree.temp.a.jul, column="Date", event=c("site", "Plot"), label.event="Event")
+
+# model not correcting for temporal autocorrelation:
+m1 <- bam(max_off ~ s(Basal_Area_20m,perc_broad_20m) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data=test1)
+
+# rho
+r1 <- start_value_rho(m1, plot=TRUE)
+r1
+
+# Temporal autocorrelation plots:
+
+# default ACF function:
+acf(resid(notime), main="acf(resid(m1))")
+# resid_gam:
+acf(resid_gam(notime$mer), main="acf(resid_gam(m1))")
+# acf_resid:
+acf_resid(notime$mer, main="acf_resid(m1)")
+
+# Model accounting for temporal autocorrelation:
+m1AR1 <- bam(max_off ~ s(Basal_Area_20m,perc_broad_20m) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = test1, rho=r1, AR.start=test1$start.event)
+
+test1$Date <- as.Date(test1$Date)
+
+library(lubridate)
+test1$Day <- day(test1$Date)
+
+time <- gamm4(max_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = test1)
+
+notime <- gamm4(max_off ~ s(Basal_Area_20m,perc_broad_20m) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = test1)
+
+
+
+
+summary(m1AR1$gam)
+plot(m1AR1$gam, scheme = 2)
+
+# Before and after accounting for temporal autocorrelation.
+par(mfrow=c(1,2), cex=1.1)
+acf_resid(m1)
+acf_resid(m1AR1$mer)
+
+# (Corrected residuals) model output
+par(mfrow=c(1,2), cex=1.1)
+
+plot(m1AR1, scheme = 2, lwd = 3, main = "Max air july corrected", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999))
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+plot(m1, scheme = 2, lwd = 3, main = "Max air july", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999))
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+```
+
+

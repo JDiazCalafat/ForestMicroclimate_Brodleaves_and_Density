@@ -253,9 +253,9 @@ hochwald.temp.s.jan <- hochwald.temp.s[which(hochwald.temp.s$Date %in% coldmonth
 
 hochwald.temp.s.jul <- hochwald.temp.s[which(hochwald.temp.s$Date %in% warmmonth.hochwald.s),]
 
-rm(hochwald.temp)
-rm(hochwald.temp.a)
-rm(hochwald.temp.s)
+#rm(hochwald.temp)
+#rm(hochwald.temp.a)
+#rm(hochwald.temp.s)
 
 hochwald.completeness.a.jan <- dcast(hochwald.temp.a.jan, Date~Plot, fun.aggregate = mean, value.var = "Temp")
 
@@ -542,12 +542,12 @@ vis_miss(sandsjo.completeness.a.jul, warn_large_data = FALSE)
 vis_miss(sandsjo.completeness.s.jan, warn_large_data = FALSE)
 vis_miss(sandsjo.completeness.s.jul, warn_large_data = FALSE)
 
-rm(sandsjo.completeness.a.jan)
+#rm(sandsjo.completeness.a.jan)
 #rm(sandsjo.completeness.a.jul)
-rm(sandsjo.completeness.s.jan)
-rm(sandsjo.completeness.s.jul)
-rm(sandsjo.temp.a)
-rm(sandsjo.temp.s)
+#rm(sandsjo.completeness.s.jan)
+#rm(sandsjo.completeness.s.jul)
+#rm(sandsjo.temp.a)
+#rm(sandsjo.temp.s)
 ```
 
 Loggers that failed:

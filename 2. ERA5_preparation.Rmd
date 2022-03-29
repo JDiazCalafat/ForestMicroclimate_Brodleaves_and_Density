@@ -35,22 +35,22 @@ wind.nc <- brick("./ERA5/ERA5_wind.nc")
 snow.nc <- brick("./ERA5/ERA5_snowprec.nc", varname = "sd")
 prec.nc <- brick("./ERA5/ERA5_snowprec.nc", varname = "tp")
 ```
-And subset the ERA5 data to our climatic extent (earliest date: 2019-09-01; latest date: 2021-07-03).
+And subset the ERA5 data to our climatic extent (earliest date: 2020-01-01; latest date: 2021-07-31).
 
 ```{r}
-air.temp.nc <- air.temp.nc[[which(getZ(air.temp.nc) >= as.Date("2019-09-01") & getZ(air.temp.nc) <= as.Date("2021-07-03"))]]
+air.temp.nc <- air.temp.nc[[which(getZ(air.temp.nc) >= as.Date("2020-01-01") & getZ(air.temp.nc) <= as.Date("2021-07-31"))]]
 
-max.temp.nc <- max.temp.nc[[which(getZ(max.temp.nc) >= as.Date("2019-09-01") & getZ(max.temp.nc) <= as.Date("2021-07-03"))]]
+max.temp.nc <- max.temp.nc[[which(getZ(max.temp.nc) >= as.Date("2020-01-01") & getZ(max.temp.nc) <= as.Date("2021-07-31"))]]
 
-min.temp.nc <- min.temp.nc[[which(getZ(min.temp.nc) >= as.Date("2019-09-01") & getZ(min.temp.nc) <= as.Date("2021-07-03"))]]
+min.temp.nc <- min.temp.nc[[which(getZ(min.temp.nc) >= as.Date("2020-01-01") & getZ(min.temp.nc) <= as.Date("2021-07-31"))]]
 
-soil.temp.nc <- soil.temp.nc[[which(getZ(soil.temp.nc) >= as.Date("2019-09-01") & getZ(soil.temp.nc) <= as.Date("2021-07-03"))]]
+soil.temp.nc <- soil.temp.nc[[which(getZ(soil.temp.nc) >= as.Date("2020-01-01") & getZ(soil.temp.nc) <= as.Date("2021-07-31"))]]
 
-wind.nc <- wind.nc[[which(getZ(wind.nc) >= as.Date("2019-09-01") & getZ(wind.nc) <= as.Date("2021-07-03"))]]
+wind.nc <- wind.nc[[which(getZ(wind.nc) >= as.Date("2020-01-01") & getZ(wind.nc) <= as.Date("2021-07-31"))]]
 
-snow.nc <- snow.nc[[which(getZ(snow.nc) >= as.Date("2019-09-01") & getZ(snow.nc) <= as.Date("2021-07-03"))]]
+snow.nc <- snow.nc[[which(getZ(snow.nc) >= as.Date("2020-01-01") & getZ(snow.nc) <= as.Date("2021-07-31"))]]
 
-prec.nc <- prec.nc[[which(getZ(prec.nc) >= as.Date("2019-09-01") & getZ(prec.nc) <= as.Date("2021-07-03"))]]
+prec.nc <- prec.nc[[which(getZ(prec.nc) >= as.Date("2020-01-01") & getZ(prec.nc) <= as.Date("2021-07-31"))]]
 ```
 
 Convert coordinates to spatial points: 
