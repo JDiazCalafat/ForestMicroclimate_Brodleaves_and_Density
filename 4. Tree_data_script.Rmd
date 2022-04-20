@@ -61,6 +61,65 @@ Plot 35 and 36 in Arville were located in a clear cut with no trees, but we are 
 
 ## Calculate basal area
 
+We are interested in calculating how much basal area per site and tree species here was. For this, we will duplicate our main dataset.
+
+```{r}
+tree.data.sp <- tree.data
+
+tree.data.sp$DBH <- as.numeric(tree.data.sp$DBH)
+tree.data.sp$Distance <- as.numeric(tree.data.sp$Distance)
+tree.data.sp$real.dist <- as.numeric(tree.data.sp$real.dist)
+
+# First Arville, as we used 20 m radius to measure trees and there were only 38 plots instead of 40
+tree.data.sp.arville <- tree.data.sp %>%
+  filter((Site %in% "Arville")) %>%
+  group_by(Site, Species) %>%
+  summarise(
+Basal_Area_sp = (sum((pi*(DBH[real.dist <= 20]/20)^2)/10000)/(38*pi*20^2))*10000)
+
+tree.data.sp.arville$BA_total <- sum(tree.data.sp.arville$Basal_Area_sp) # add total BA
+
+# In Hochwald we have 39 plots instead of 40. We'll treat it separately:
+tree.data.sp.hoch <- tree.data.sp %>%
+  filter((Site %in% "Hochwald")) %>%
+  group_by(Site, Species) %>%
+  summarise(
+Basal_Area_sp = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(39*pi*10^2))*10000)
+
+tree.data.sp.hoch$BA_total <- sum(tree.data.sp.hoch$Basal_Area_sp) # add total BA
+
+# Then other sites (with 40 plots):
+tree.data.sp.noarv <- tree.data.sp %>%
+  filter(!(Site %in% c("Arville", "Hochwald"))) %>%
+  group_by(Site, Species) %>%
+  summarise(
+Basal_Area_sp = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(40*pi*10^2))*10000)
+
+# Add total BA per site:
+tree.data.sp.noarv$BA_total <- 0 # empty variable
+
+tree.data.sp.noarv[which(tree.data.sp.noarv$Site == "Vivarp"),]$BA_total <- sum(tree.data.sp.noarv[which(tree.data.sp.noarv$Site == "Vivarp"),]$Basal_Area_sp)
+
+tree.data.sp.noarv[which(tree.data.sp.noarv$Site == "Siljan"),]$BA_total <- sum(tree.data.sp.noarv[which(tree.data.sp.noarv$Site == "Siljan"),]$Basal_Area_sp)
+
+tree.data.sp.noarv[which(tree.data.sp.noarv$Site == "Sandsjo"),]$BA_total <- sum(tree.data.sp.noarv[which(tree.data.sp.noarv$Site == "Sandsjo"),]$Basal_Area_sp)
+
+# Merge:
+
+tree.data.sp <- rbind(tree.data.sp.arville, tree.data.sp.hoch, tree.data.sp.noarv)
+
+rm(tree.data.sp.arville)
+rm(tree.data.sp.hoch)
+rm(tree.data.sp.noarv)
+
+# Calculate % of BA per species and site:
+tree.data.sp$perc_BA_sp <- round((tree.data.sp$Basal_Area_sp/tree.data.sp$BA_total)*100,2)
+
+tree.data.sp
+
+rm(tree.data.sp)
+```
+
 As we measured trees in a 10 m radius everywhere but in Arville, where we used 20 m radius, we will run this in two separate instructions to create variables for different radi at 1 m intervals. This way we will not calculate BA calues for radi between 11 and 20 for sites that are not Arville.
 
 ```{r}

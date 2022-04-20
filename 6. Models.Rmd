@@ -261,7 +261,7 @@ corrplot(cor.s.jul, method = 'ellipse', order = 'AOE', type = 'upper', addCoef.c
 
 No variables are excessively correlated. Only NCI and Basal Area, as they are based on the same data for their calculation. However, only one variable (among Canopy Openness [CanOpen], NCI and Basal area) is included in the analyses as a proxy for forest density, within the smoother term of the GLMM.
 
-Now the models: We can take a backwards approach.
+Now the models: we will add previous averaged temperature and snow covariates.
 
 #### Model with covariates for the soil temperature offset in the coldest month:
 
@@ -269,13 +269,13 @@ We will add Day within a single smoother to account for temporal autocorrelation
 
 ```{r}
 # basal area
-model.soil.jan.ba.all <- gamm4(soil_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.s.jan)
+model.soil.jan.ba.all <- gamm4(soil_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + snow + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.s.jan)
 
 summary(model.soil.jan.ba.all$gam)
 AIC(model.soil.jan.ba.all$mer)
 
 #canopy openness
-model.soil.jan.co.all <- gamm4(soil_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.s.jan)
+model.soil.jan.co.all <- gamm4(soil_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + snow + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.s.jan)
 
 summary(model.soil.jan.co.all$gam)
 AIC(model.soil.jan.co.all$mer)
@@ -302,17 +302,17 @@ gam.check(model.soil.jan.co.all$gam)
 
 #### Model with covariates for the soil temperature offset in the warmest month
 
-Same backwards approach:
+Same approach:
 
 ```{r}
 # basal area
-model.soil.jul.ba.all <- gamm4(soil_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.s.jul)
+model.soil.jul.ba.all <- gamm4(soil_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.s.jul)
 
 summary(model.soil.jul.ba.all$gam)
 AIC(model.soil.jul.ba.all$mer)
 
 # canopy openness
-model.soil.jul.co.all <- gamm4(soil_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.s.jul)
+model.soil.jul.co.all <- gamm4(soil_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.s.jul)
 
 summary(model.soil.jul.co.all$gam)
 AIC(model.soil.jul.co.all$mer)
@@ -526,7 +526,7 @@ AIC(airmodel24$mer)
 
 ### Adding covariates:
 
-For this, we will also take a backwards approach, adding all covariates in the first model and then removing them according to their p-value.
+For this, we will add all covariates but snow and then remove them according to their p-value.
 
 #### Coldest month (with covariates)
 
@@ -534,16 +534,18 @@ For this, we will also take a backwards approach, adding all covariates in the f
 
 ```{r}
 # basal area
-model.minair.jan.ba.all <- gamm4(min_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.minair.jan.ba.all <- gamm4(min_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.minair.jan.ba.all$gam)
 AIC(model.minair.jan.ba.all$mer)
 
+
 # canopy openness
-model.minair.jan.co.all <- gamm4(min_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.minair.jan.co.all <- gamm4(min_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.minair.jan.co.all$gam)
 AIC(model.minair.jan.co.all$mer)
+
 
 # basal area
 
@@ -565,17 +567,10 @@ gam.check(model.minair.jan.co.all$gam)
 
 ```{r}
 # basal area
-model.meanair.jan.ba.all <- gamm4(air_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.meanair.jan.ba.all <- gamm4(air_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.meanair.jan.ba.all$gam)
 AIC(model.meanair.jan.ba.all$mer)
-
-# Prev_av_prec is not significant (0.6). Let's remove it:
-
-model.meanair.jan.ba.noprec <- gamm4(air_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.a.jan)
-
-summary(model.meanair.jan.ba.noprec$gam)
-AIC(model.meanair.jan.ba.noprec$mer)
 
 
 plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
@@ -587,17 +582,10 @@ gam.check(model.meanair.jan.ba.all$gam)
 
 # canopy openness
 
-model.meanair.jan.co.all <- gamm4(air_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.meanair.jan.co.all <- gamm4(air_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.meanair.jan.co.all$gam)
 AIC(model.meanair.jan.co.all$mer)
-
-# Prev_av_prec is not significant (0.6). Let's remove it:
-
-model.meanair.jan.co.nosnowprec <- gamm4(air_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp, random = ~ (1|site:Plot), data = tree.temp.a.jan)
-
-summary(model.meanair.jan.co.nosnowprec$gam)
-AIC(model.meanair.jan.co.nosnowprec$mer)
 
 
 plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
@@ -612,7 +600,7 @@ gam.check(model.meanair.jan.co.all$gam)
 
 ```{r}
 # basal area
-model.maxair.jan.ba.all <- gamm4(max_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.maxair.jan.ba.all <- gamm4(max_off ~ s(Basal_Area_20m,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.maxair.jan.ba.all$gam)
 AIC(model.maxair.jan.ba.all$mer)
@@ -626,7 +614,7 @@ points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 gam.check(model.maxair.jan.ba.all$gam)
 
 # canopy openness
-model.maxair.jan.co.all <- gamm4(max_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + snow + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.maxair.jan.co.all <- gamm4(max_off ~ s(CanOpen,perc_broad_20m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.maxair.jan.co.all$gam)
 AIC(model.maxair.jan.co.all$mer)
@@ -738,7 +726,7 @@ gam.check(model.maxair.jul.co.noprevtemp$gam)
 # Basal area
 par(mfrow=c(1,2))
 
-plot(model.soil.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+plot(model.soil.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 2, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -749,11 +737,11 @@ points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 # Canopy openness
 par(mfrow=c(1,2))
 
-plot(model.soil.jan.co.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+plot(model.soil.jan.co.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.5, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
-plot(model.soil.jul.co.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+plot(model.soil.jul.co.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 2, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 ```
@@ -870,5 +858,189 @@ model.meanair.jul.ba.4 <- gamm4(air_off ~ s(Basal_Area_4m,perc_broad_4m) + s(Day
 
 summary(model.meanair.jul.ba.4$gam)
 AIC(model.meanair.jul.ba.4$mer)
+
+# Min air temperature offset warmest month
+model.minair.jul.ba.10 <- gamm4(min_off ~ s(Basal_Area_10m,perc_broad_10m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.minair.jul.ba.10$gam)
+AIC(model.minair.jul.ba.10$mer)
+
+model.minair.jul.ba.9 <- gamm4(min_off ~ s(Basal_Area_9m,perc_broad_9m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.minair.jul.ba.9$gam)
+AIC(model.minair.jul.ba.9$mer)
+
+model.minair.jul.ba.8 <- gamm4(min_off ~ s(Basal_Area_8m,perc_broad_8m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.minair.jul.ba.8$gam)
+AIC(model.minair.jul.ba.8$mer)
+
+model.minair.jul.ba.7 <- gamm4(min_off ~ s(Basal_Area_7m,perc_broad_7m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.minair.jul.ba.7$gam)
+AIC(model.minair.jul.ba.7$mer)
+
+model.minair.jul.ba.6 <- gamm4(min_off ~ s(Basal_Area_6m,perc_broad_6m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.minair.jul.ba.6$gam)
+AIC(model.minair.jul.ba.6$mer)
+
+model.minair.jul.ba.5 <- gamm4(min_off ~ s(Basal_Area_5m,perc_broad_5m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.minair.jul.ba.5$gam)
+AIC(model.minair.jul.ba.5$mer)
+
+model.minair.jul.ba.4 <- gamm4(min_off ~ s(Basal_Area_4m,perc_broad_4m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.minair.jul.ba.4$gam)
+AIC(model.minair.jul.ba.4$mer)
+
+# Max air temperature offset warmest month
+model.maxair.jul.ba.10 <- gamm4(max_off ~ s(Basal_Area_10m,perc_broad_10m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.maxair.jul.ba.10$gam)
+AIC(model.maxair.jul.ba.10$mer)
+
+model.maxair.jul.ba.9 <- gamm4(max_off ~ s(Basal_Area_9m,perc_broad_9m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.maxair.jul.ba.9$gam)
+AIC(model.maxair.jul.ba.9$mer)
+
+model.maxair.jul.ba.8 <- gamm4(max_off ~ s(Basal_Area_8m,perc_broad_8m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.maxair.jul.ba.8$gam)
+AIC(model.maxair.jul.ba.8$mer)
+
+model.maxair.jul.ba.7 <- gamm4(max_off ~ s(Basal_Area_7m,perc_broad_7m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.maxair.jul.ba.7$gam)
+AIC(model.maxair.jul.ba.7$mer)
+
+model.maxair.jul.ba.6 <- gamm4(max_off ~ s(Basal_Area_6m,perc_broad_6m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.maxair.jul.ba.6$gam)
+AIC(model.maxair.jul.ba.6$mer)
+
+model.maxair.jul.ba.5 <- gamm4(max_off ~ s(Basal_Area_5m,perc_broad_5m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.maxair.jul.ba.5$gam)
+AIC(model.maxair.jul.ba.5$mer)
+
+model.maxair.jul.ba.4 <- gamm4(max_off ~ s(Basal_Area_4m,perc_broad_4m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+
+summary(model.maxair.jul.ba.4$gam)
+AIC(model.maxair.jul.ba.4$mer)
+
+
+# Mean air temp offset warmest month
+
+tree.temp.a.jan <- tree.temp.a.jan[-which(tree.temp.a.jan$site == "Arville"),]
+
+model.meanair.jan.ba.10 <- gamm4(air_off ~ s(Basal_Area_10m,perc_broad_10m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.meanair.jan.ba.10$gam)
+AIC(model.meanair.jan.ba.10$mer)
+
+model.meanair.jan.ba.9 <- gamm4(air_off ~ s(Basal_Area_9m,perc_broad_9m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.meanair.jan.ba.9$gam)
+AIC(model.meanair.jan.ba.9$mer)
+
+model.meanair.jan.ba.8 <- gamm4(air_off ~ s(Basal_Area_8m,perc_broad_8m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.meanair.jan.ba.8$gam)
+AIC(model.meanair.jan.ba.8$mer)
+
+model.meanair.jan.ba.7 <- gamm4(air_off ~ s(Basal_Area_7m,perc_broad_7m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.meanair.jan.ba.7$gam)
+AIC(model.meanair.jan.ba.7$mer)
+
+model.meanair.jan.ba.6 <- gamm4(air_off ~ s(Basal_Area_6m,perc_broad_6m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.meanair.jan.ba.6$gam)
+AIC(model.meanair.jan.ba.6$mer)
+
+model.meanair.jan.ba.5 <- gamm4(air_off ~ s(Basal_Area_5m,perc_broad_5m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.meanair.jan.ba.5$gam)
+AIC(model.meanair.jan.ba.5$mer)
+
+model.meanair.jan.ba.4 <- gamm4(air_off ~ s(Basal_Area_4m,perc_broad_4m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.meanair.jan.ba.4$gam)
+AIC(model.meanair.jan.ba.4$mer)
+
+# Min air temperature offset warmest month
+model.minair.jan.ba.10 <- gamm4(min_off ~ s(Basal_Area_10m,perc_broad_10m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.minair.jan.ba.10$gam)
+AIC(model.minair.jan.ba.10$mer)
+
+model.minair.jan.ba.9 <- gamm4(min_off ~ s(Basal_Area_9m,perc_broad_9m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.minair.jan.ba.9$gam)
+AIC(model.minair.jan.ba.9$mer)
+
+model.minair.jan.ba.8 <- gamm4(min_off ~ s(Basal_Area_8m,perc_broad_8m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.minair.jan.ba.8$gam)
+AIC(model.minair.jan.ba.8$mer)
+
+model.minair.jan.ba.7 <- gamm4(min_off ~ s(Basal_Area_7m,perc_broad_7m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.minair.jan.ba.7$gam)
+AIC(model.minair.jan.ba.7$mer)
+
+model.minair.jan.ba.6 <- gamm4(min_off ~ s(Basal_Area_6m,perc_broad_6m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.minair.jan.ba.6$gam)
+AIC(model.minair.jan.ba.6$mer)
+
+model.minair.jan.ba.5 <- gamm4(min_off ~ s(Basal_Area_5m,perc_broad_5m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.minair.jan.ba.5$gam)
+AIC(model.minair.jan.ba.5$mer)
+
+model.minair.jan.ba.4 <- gamm4(min_off ~ s(Basal_Area_4m,perc_broad_4m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.minair.jan.ba.4$gam)
+AIC(model.minair.jan.ba.4$mer)
+
+# Max air temperature offset warmest month
+model.maxair.jan.ba.10 <- gamm4(max_off ~ s(Basal_Area_10m,perc_broad_10m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.maxair.jan.ba.10$gam)
+AIC(model.maxair.jan.ba.10$mer)
+
+model.maxair.jan.ba.9 <- gamm4(max_off ~ s(Basal_Area_9m,perc_broad_9m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.maxair.jan.ba.9$gam)
+AIC(model.maxair.jan.ba.9$mer)
+
+model.maxair.jan.ba.8 <- gamm4(max_off ~ s(Basal_Area_8m,perc_broad_8m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.maxair.jan.ba.8$gam)
+AIC(model.maxair.jan.ba.8$mer)
+
+model.maxair.jan.ba.7 <- gamm4(max_off ~ s(Basal_Area_7m,perc_broad_7m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.maxair.jan.ba.7$gam)
+AIC(model.maxair.jan.ba.7$mer)
+
+model.maxair.jan.ba.6 <- gamm4(max_off ~ s(Basal_Area_6m,perc_broad_6m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.maxair.jan.ba.6$gam)
+AIC(model.maxair.jan.ba.6$mer)
+
+model.maxair.jan.ba.5 <- gamm4(max_off ~ s(Basal_Area_5m,perc_broad_5m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.maxair.jan.ba.5$gam)
+AIC(model.maxair.jan.ba.5$mer)
+
+model.maxair.jan.ba.4 <- gamm4(max_off ~ s(Basal_Area_4m,perc_broad_4m) + s(Day) + site + wind + prev_av_temp + prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+
+summary(model.maxair.jan.ba.4$gam)
+AIC(model.maxair.jan.ba.4$mer)
 ```
 
