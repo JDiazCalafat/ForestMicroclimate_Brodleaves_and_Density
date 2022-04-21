@@ -1,0 +1,625 @@
+# Macro vs. Microclimate
+
+First, we need to load ERA5 data and logger data:
+
+```{r}
+logger.temp <- read.csv("./DATASETS/rawtemp_min.csv", header = TRUE)
+
+ERA5.temp <- read.csv("./DATASETS/ERA5_raw_hour.csv", header = TRUE)
+```
+
+... and some packages:
+
+```{r}
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+```
+
+Logger data is at a 15-min resolution, but ERA5 data is at an hourly resolution. Let's downscale logger data to 1-hour.
+
+```{r}
+logger.temp$datetime <- paste(logger.temp$Date, logger.temp$time)
+
+logger.temp$datetime <- as.POSIXct(logger.temp$datetime, format = "%F %T")
+
+logger.temp$hour <- hour(logger.temp$datetime)
+
+logger.temp.2 <- logger.temp %>%
+  group_by(site, Plot, location, Date, hour) %>%
+  summarise(
+loggertemp = (mean(Temp)))
+
+logger.temp.2$datetime <- paste(logger.temp.2$Date, paste(logger.temp.2$hour,":00:00", sep = ""))
+
+logger.temp.2$datetime <- as.POSIXct(logger.temp.2$datetime, format = "%F %T")
+```
+
+
+Merge both datasets:
+```{r}
+ERA5.temp$datetime <- paste(ERA5.temp$date, ERA5.temp$time) 
+
+ERA5.temp$datetime <- as.POSIXct(ERA5.temp$datetime, format = "%F %T")
+
+temp <- merge(logger.temp.2, ERA5.temp, by = c("site", "datetime"))
+
+rm(logger.temp)
+rm(logger.temp.2)
+rm(ERA5.temp)
+```
+
+
+Figure:
+
+```{r}
+arville <- temp[which(temp$site == "Arville"),]
+
+onecoldweek <- seq(as.POSIXct('2021-1-3 00:00:00'),as.POSIXct('2021-1-10 00:00:00'), by = '1 hour')
+
+arville.week.cold <- arville[arville$datetime %in% onecoldweek,]
+
+arville.coldplot <- ggplot(arville.week.cold[which(arville.week.cold$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 2),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 5),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 6),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 11),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 12),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 13),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 14),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 15),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 18),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 19),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 20),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 21),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 25),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 27),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 28),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 29),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 30),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 31),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 34),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 37),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 38),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 39),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.cold[which(arville.week.cold$Plot == 40),]$loggertemp)) + 
+  geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+   ggtitle("Arville coldest month")
+  
+rm(arville.week.cold)
+
+# Same with warmest month (july):
+
+
+onewarmweek <- seq(as.POSIXct('2020-7-1 00:00:00'),as.POSIXct('2020-7-8 00:00:00'), by = '1 hour')
+
+arville.week.warm <- arville[arville$datetime %in% onewarmweek,]
+
+arville.warmplot <- 
+  ggplot(arville.week.warm[which(arville.week.warm$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 2),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 5),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 6),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 11),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 12),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 13),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 14),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 15),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 18),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 19),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 20),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 21),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 25),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 27),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 28),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 29),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 30),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 31),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 34),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 37),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 38),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 39),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= arville.week.warm[which(arville.week.warm$Plot == 40),]$loggertemp)) + 
+  geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+   ggtitle("Arville warmest month")
+  
+rm(arville)
+rm(arville.week.warm)
+```
+
+Hochwald:
+
+```{r}
+hochwald <- temp[which(temp$site == "Hochwald"),]
+
+hochwald <- hochwald[which(hochwald$location == "a"),]
+
+onecoldweek <- seq(as.POSIXct('2021-1-3 00:00:00'),as.POSIXct('2021-1-10 00:00:00'), by = '1 hour')
+
+hochwald.week.cold <- hochwald[hochwald$datetime %in% onecoldweek,]
+
+
+hochwald.coldplot <- 
+  ggplot(hochwald.week.cold[which(hochwald.week.cold$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 2),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 3),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 5),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 11),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 12),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 14),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 17),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 18),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 19),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 20),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 21),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 25),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 26),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 27),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 28),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 29),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 30),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 31),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 32),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 33),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 35),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 36),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 37),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 38),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 40),]$loggertemp)) + 
+  geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+  ggtitle("Hochwald coldest month")
+  
+rm(hochwald.week.cold)
+
+# Same with warmest month (july):
+
+onewarmweek <- seq(as.POSIXct('2020-7-1 00:00:00'),as.POSIXct('2020-7-8 00:00:00'), by = '1 hour')
+
+hochwald.week.warm <- hochwald[hochwald$datetime %in% onewarmweek,]
+
+hochwald.warmplot <- 
+  ggplot(hochwald.week.warm[which(hochwald.week.warm$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 2),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 3),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 5),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 11),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 12),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 14),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 17),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 18),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 19),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 20),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 21),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 25),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 26),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 27),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 28),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 29),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 30),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 31),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 32),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 33),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 35),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 36),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 37),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 38),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 40),]$loggertemp)) + 
+  geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+  ggtitle("Hochwald warmest month")
+
+rm(hochwald)
+rm(hochwald.week.warm)
+```
+
+Vivarp:
+
+```{r}
+vivarp <- temp[which(temp$site == "Vivarp"),]
+
+vivarp <- vivarp[which(vivarp$location == "a"),]
+
+onecoldweek <- seq(as.POSIXct('2021-1-3 00:00:00'),as.POSIXct('2021-1-10 00:00:00'), by = '1 hour')
+
+vivarp.week.cold <- vivarp[vivarp$datetime %in% onecoldweek,]
+
+vivarp.coldplot <- ggplot(vivarp.week.cold[which(vivarp.week.cold$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 2),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 3),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 5),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 6),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 11),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 12),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 13),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 14),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 15),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 17),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 18),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 19),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 20),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 21),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 25),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 26),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 27),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 28),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 29),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 31),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 32),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 33),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 34),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 35),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 36),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 37),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 38),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 39),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.cold[which(vivarp.week.cold$Plot == 40),]$loggertemp)) + 
+      geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+  ggtitle("Vivarp coldest month")
+  
+rm(vivarp.week.cold)
+
+# Same with warmest month (july):
+
+onewarmweek <- seq(as.POSIXct('2021-7-1 00:00:00'),as.POSIXct('2021-7-8 00:00:00'), by = '1 hour')
+
+vivarp.week.warm <- vivarp[vivarp$datetime %in% onewarmweek,]
+
+vivarp.warmplot <- 
+  ggplot(vivarp.week.warm[which(vivarp.week.warm$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 2),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 3),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 5),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 6),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 11),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 12),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 13),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 14),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 15),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 17),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 18),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 19),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 20),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 21),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 25),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 26),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 27),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 28),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 29),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 31),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 32),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 33),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 34),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 35),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 36),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 37),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 38),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 39),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= vivarp.week.warm[which(vivarp.week.warm$Plot == 40),]$loggertemp)) + 
+      geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+  ggtitle("Vivarp warmest month")
+
+rm(vivarp)
+rm(vivarp.week.warm)
+```
+
+Siljan:
+
+```{r}
+siljan <- temp[which(temp$site == "Siljan"),]
+
+siljan <- siljan[which(siljan$location == "a"),]
+
+onecoldweek <- seq(as.POSIXct('2021-1-3 00:00:00'),as.POSIXct('2021-1-10 00:00:00'), by = '1 hour')
+
+siljan.week.cold <- siljan[siljan$datetime %in% onecoldweek,]
+
+siljan.coldplot <- 
+  ggplot(siljan.week.cold[which(siljan.week.cold$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 2),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 3),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 5),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 6),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 11),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 13),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 15),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 17),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 19),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 20),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 25),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 26),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 27),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 28),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 29),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 31),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 32),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 33),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 34),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 35),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 36),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 37),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 38),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 39),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.cold[which(siljan.week.cold$Plot == 40),]$loggertemp)) + 
+      geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+  ggtitle("Siljan coldest month")
+  
+rm(siljan.week.cold)
+
+# Same with warmest month (july):
+
+onewarmweek <- seq(as.POSIXct('2020-7-1 00:00:00'),as.POSIXct('2020-7-8 00:00:00'), by = '1 hour')
+
+siljan.week.warm <- siljan[siljan$datetime %in% onewarmweek,]
+
+siljan.warmplot <- 
+  ggplot(siljan.week.warm[which(siljan.week.warm$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 2),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 3),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 5),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 6),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 11),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 13),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 15),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 17),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 19),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 20),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 25),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 26),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 27),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 28),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 29),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 31),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 32),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 33),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 34),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 35),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 36),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 37),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 38),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 39),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= siljan.week.warm[which(siljan.week.warm$Plot == 40),]$loggertemp)) + 
+      geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+  ggtitle("Hochwald warmest month")
+
+rm(siljan)
+rm(siljan.week.warm)
+```
+
+Sandsjö:
+
+```{r}
+sandsjo <- temp[which(temp$site == "Sandsjo"),]
+
+sandsjo <- sandsjo[which(sandsjo$location == "a"),]
+
+onecoldweek <- seq(as.POSIXct('2020-1-1 00:00:00'),as.POSIXct('2020-1-8 00:00:00'), by = '1 hour')
+
+sandsjo.week.cold <- sandsjo[sandsjo$datetime %in% onecoldweek,]
+
+sandsjo.coldplot <- 
+  ggplot(sandsjo.week.cold[which(sandsjo.week.cold$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 2),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 3),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 5),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 6),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 11),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 12),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 13),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 14),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 15),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 17),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 18),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 19),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 21),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 25),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 26),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 27),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 28),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 29),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 30),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 31),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 32),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 33),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 34),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 35),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 36),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 38),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 39),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.cold[which(sandsjo.week.cold$Plot == 40),]$loggertemp)) + 
+      geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+  ggtitle("Sandsjö coldest month")
+
+rm(sandsjo.week.cold)
+
+# Same with warmest month (july):
+
+onewarmweek <- seq(as.POSIXct('2020-7-1 00:00:00'),as.POSIXct('2020-7-8 00:00:00'), by = '1 hour')
+
+sandsjo.week.warm <- sandsjo[sandsjo$datetime %in% onewarmweek,]
+
+sandsjo.warmplot <- 
+  ggplot(sandsjo.week.warm[which(sandsjo.week.warm$Plot == 1),], aes(x = datetime)) +
+geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 1),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 2),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 3),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 4),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 5),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 6),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 7),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 8),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 9),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 10),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 11),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 12),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 13),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 14),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 15),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 16),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 17),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 18),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 19),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 21),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 22),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 23),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 24),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 25),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 26),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 27),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 28),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 29),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 30),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 31),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 32),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 33),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 34),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 35),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 36),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 38),]$loggertemp)) +
+    geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 39),]$loggertemp)) +
+  geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= sandsjo.week.warm[which(sandsjo.week.warm$Plot == 40),]$loggertemp)) + 
+      geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
+    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+  ggtitle("Sandsjö warmest month")
+
+rm(sandsjo)
+rm(sandsjo.week.warm)
+
+rm(onecoldweek)
+rm(onewarmweek)
+
+rm(temp)
+```
+
+
+```{r}
+library(gridExtra)
+
+grid.arrange(arville.coldplot,
+arville.warmplot,
+hochwald.coldplot,
+hochwald.warmplot,
+vivarp.coldplot,
+vivarp.warmplot,
+siljan.coldplot,
+siljan.warmplot,
+sandsjo.coldplot,
+sandsjo.warmplot, ncol=2)
+```
