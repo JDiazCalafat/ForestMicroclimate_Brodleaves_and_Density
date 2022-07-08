@@ -328,32 +328,32 @@ tree.data.plot[is.nan(tree.data.plot)] <- 0
 ## Competition index
 
 ```{r}
-tree.data.2 <- tree.data %>%
-  group_by(Site, Plot) %>%
-  summarise(
-nci20m = sum(DBH[real.dist <= 20]/Distance[real.dist <= 20]),
-nci19m = sum(DBH[real.dist <= 19]/Distance[real.dist <= 19]),
-nci18m = sum(DBH[real.dist <= 18]/Distance[real.dist <= 18]),
-nci17m = sum(DBH[real.dist <= 17]/Distance[real.dist <= 17]),
-nci16m = sum(DBH[real.dist <= 16]/Distance[real.dist <= 16]),
-nci15m = sum(DBH[real.dist <= 15]/Distance[real.dist <= 15]),
-nci14m = sum(DBH[real.dist <= 14]/Distance[real.dist <= 14]),
-nci13m = sum(DBH[real.dist <= 13]/Distance[real.dist <= 13]),
-nci12m = sum(DBH[real.dist <= 12]/Distance[real.dist <= 12]),
-nci11m = sum(DBH[real.dist <= 11]/Distance[real.dist <= 11]),
-nci10m = sum(DBH[real.dist <= 10]/Distance[real.dist <= 10]),
-nci9m = sum(DBH[real.dist <= 9]/Distance[real.dist <= 9]),
-nci8m = sum(DBH[real.dist <= 8]/Distance[real.dist <= 8]),
-nci7m = sum(DBH[real.dist <= 7]/Distance[real.dist <= 7]),
-nci6m = sum(DBH[real.dist <= 6]/Distance[real.dist <= 6]),
-nci5m = sum(DBH[real.dist <= 5]/Distance[real.dist <= 5]),
-nci4m = sum(DBH[real.dist <= 4]/Distance[real.dist <= 4]))
-
-
-# Merge with previous data
-tree.data.plot <- tree.data.plot %>% plyr::join(tree.data.2, by=c("Site","Plot"))
-
-rm(tree.data.2)
+# tree.data.2 <- tree.data %>%
+#   group_by(Site, Plot) %>%
+#   summarise(
+# nci20m = sum(DBH[real.dist <= 20]/Distance[real.dist <= 20]),
+# nci19m = sum(DBH[real.dist <= 19]/Distance[real.dist <= 19]),
+# nci18m = sum(DBH[real.dist <= 18]/Distance[real.dist <= 18]),
+# nci17m = sum(DBH[real.dist <= 17]/Distance[real.dist <= 17]),
+# nci16m = sum(DBH[real.dist <= 16]/Distance[real.dist <= 16]),
+# nci15m = sum(DBH[real.dist <= 15]/Distance[real.dist <= 15]),
+# nci14m = sum(DBH[real.dist <= 14]/Distance[real.dist <= 14]),
+# nci13m = sum(DBH[real.dist <= 13]/Distance[real.dist <= 13]),
+# nci12m = sum(DBH[real.dist <= 12]/Distance[real.dist <= 12]),
+# nci11m = sum(DBH[real.dist <= 11]/Distance[real.dist <= 11]),
+# nci10m = sum(DBH[real.dist <= 10]/Distance[real.dist <= 10]),
+# nci9m = sum(DBH[real.dist <= 9]/Distance[real.dist <= 9]),
+# nci8m = sum(DBH[real.dist <= 8]/Distance[real.dist <= 8]),
+# nci7m = sum(DBH[real.dist <= 7]/Distance[real.dist <= 7]),
+# nci6m = sum(DBH[real.dist <= 6]/Distance[real.dist <= 6]),
+# nci5m = sum(DBH[real.dist <= 5]/Distance[real.dist <= 5]),
+# nci4m = sum(DBH[real.dist <= 4]/Distance[real.dist <= 4]))
+# 
+# 
+# # Merge with previous data
+# tree.data.plot <- tree.data.plot %>% plyr::join(tree.data.2, by=c("Site","Plot"))
+# 
+# rm(tree.data.2)
 ```
 
 ## Hemispherical pictures

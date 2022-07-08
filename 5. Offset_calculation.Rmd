@@ -1,69 +1,199 @@
 # Offset calculation and dataset merging
 
+Load packages...
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(reshape)
+library(ggpubr)
+```
+
 First, we need to load ERA5 data and logger data:
 
 ```{r}
 logger.temp <- read.csv("./DATASETS/logger_temp.csv", header = TRUE)
 
 ERA5.temp <- read.csv("./DATASETS/ERA5_temp.csv", header = TRUE)
+
+mcera5.temp <- read.csv("./DATASETS/mcera5.csv", header = TRUE)
+
+weatherstation.temp <- read.csv("./DATASETS/weatherstations_merged.csv", header = TRUE)
 ```
 
-###############
-Calculate mean temperature and precipitation for the five previous days
+And we merge everything (weather station data, ERA5, mcera5 and our loggers) by site and date:
 
 ```{r}
-library(dplyr)
-library(zoo)
-
-ERA5.temp <- ERA5.temp %>%
-    dplyr::arrange(Date) %>% 
-    dplyr::arrange(desc(site)) %>% 
-    dplyr::group_by(site) %>% 
-    dplyr::mutate(prev_av_temp = lag(zoo::rollmean(era5_air, 
-                                               k = 5, 
-                                               fill = NA), n = 3)) %>% 
-  dplyr::ungroup()
-
-ERA5.temp <- ERA5.temp %>%
-    dplyr::arrange(Date) %>% 
-    dplyr::arrange(desc(site)) %>% 
-    dplyr::group_by(site) %>% 
-    dplyr::mutate(prev_av_prec = lag(zoo::rollmean(prec, 
-                                               k = 5, 
-                                               fill = NA), n = 3)) %>% 
-  dplyr::ungroup()
-```
-
-###############
-
-
-And we merge them by site and date:
-
-```{r}
-temp <- merge(logger.temp, ERA5.temp, by = c("site", "Date"))
+temp <- merge(merge(merge(logger.temp, ERA5.temp, by = c("site", "Date"), all.x = TRUE), weatherstation.temp, by = c("site", "Date"), all.x = TRUE), mcera5.temp, by = c("site", "Date"), all.x = TRUE)
 
 rm(logger.temp)
 rm(ERA5.temp)
+rm(weatherstation.temp)
+rm(mcera5.temp)
 ```
 
-Calculate temperature offsets:
+Calculate temperature offsets ERA5:
 
 ```{r}
-temp$air_off <- temp$Temp.mean - temp$era5_air # air mean temperature
+temp$air_meanoff_ERA5 <- temp$Temp.mean - temp$era5_meanair # air mean temperature
 
-temp[which(temp$location == "s"),]$air_off <- NA # knock out values for soil loggers, as this will be calculated with "era5_soil"
+temp[which(temp$location == "s"),]$air_meanoff_ERA5 <- NA # knock out values for soil loggers, as this will be calculated with "era5_soil"
 
-temp$min_off <- temp$Temp.min - temp$era5_min
+temp$air_minoff_ERA5 <- temp$Temp.min - temp$era5_minair
 
-temp[which(temp$location == "s"),]$min_off <- NA # remove minimum values for soil temperature, as offsets are calculated with minimum air temperature.
+temp[which(temp$location == "s"),]$air_minoff_ERA5 <- NA # remove minimum values for soil temperature, as offsets are calculated with minimum air temperature.
 
-temp$max_off <- temp$Temp.max - temp$era5_max
+temp$air_maxoff_ERA5 <- temp$Temp.max - temp$era5_maxair
 
-temp[which(temp$location == "s"),]$max_off <- NA # remove maximum values for soil temperature, as offsets are calculated with minimum air
+temp[which(temp$location == "s"),]$air_maxoff_ERA5 <- NA # remove maximum values for soil temperature, as offsets are calculated with minimum air
 
-temp$soil_off <- temp$Temp.mean-temp$era5_soil
+temp$soil_meanoff_ERA5 <- temp$Temp.mean-temp$era5_meansoil
 
-temp[which(temp$location == "a"),]$soil_off <- NA # remove values obtained for air loggers, as offsets have been calculated with soil temperature
+temp[which(temp$location == "a"),]$soil_meanoff_ERA5 <- NA # remove values obtained for air loggers, as offsets have been calculated with soil temperature
+```
+
+Offset calculation for mcera5 data:
+
+```{r}
+temp$air_meanoff_mcera5 <- temp$Temp.mean - temp$meanair_mcera5 # air mean temperature
+
+temp[which(temp$location == "s"),]$air_meanoff_mcera5 <- NA # knock out values for soil loggers, as this will be calculated with "era5_soil"
+
+temp$air_minoff_mcera5 <- temp$Temp.min - temp$minair_mcera5
+
+temp[which(temp$location == "s"),]$air_minoff_mcera5 <- NA # remove minimum values for soil temperature, as offsets are calculated with minimum air temperature.
+
+temp$air_maxoff_mcera5 <- temp$Temp.max - temp$maxair_mcera5
+
+temp[which(temp$location == "s"),]$air_maxoff_mcera5 <- NA # remove maximum values for soil temperature, as offsets are calculated with minimum air
+```
+
+Offset claculation weather stations (ws)
+
+```{r}
+temp$air_meanoff_ws <- temp$Temp.mean - temp$station_meanair # air mean temperature
+
+temp[which(temp$location == "s"),]$air_meanoff_ws <- NA # knock out values for soil loggers, as this will be calculated with "era5_soil"
+
+temp$air_minoff_ws <- temp$Temp.min - temp$station_minair
+
+temp[which(temp$location == "s"),]$air_minoff_ws <- NA # remove minimum values for soil temperature, as offsets are calculated with minimum air temperature.
+
+temp$air_maxoff_ws <- temp$Temp.max - temp$station_maxair
+
+temp[which(temp$location == "s"),]$air_maxoff_ws <- NA # remove maximum values for soil temperature, as offsets are calculated with minimum air
+```
+
+Compare offsets:
+
+```{r}
+offsetplot <- temp[which(temp$location == "a"),]
+
+offsetplot$month <- month(offsetplot$Date)
+
+offsetplot.jan <- offsetplot[which(offsetplot$month == 1),]
+
+offsetplot.jan <- offsetplot.jan[,which(names(offsetplot.jan) %in% c("air_meanoff_ERA5", "air_minoff_ERA5", "air_maxoff_ERA5", "air_meanoff_mcera5", "air_minoff_mcera5", "air_maxoff_mcera5", "air_meanoff_ws", "air_minoff_ws", "air_maxoff_ws"))]
+
+offsetplot.jul <- offsetplot[which(offsetplot$month == 7),]
+rm(offsetplot)
+
+offsetplot.jul <- offsetplot.jul[,which(names(offsetplot.jul) %in% c("air_meanoff_ERA5", "air_minoff_ERA5", "air_maxoff_ERA5", "air_meanoff_mcera5", "air_minoff_mcera5", "air_maxoff_mcera5", "air_meanoff_ws", "air_minoff_ws", "air_maxoff_ws"))]
+
+melt.jan <- melt(offsetplot.jan)
+rm(offsetplot.jan)
+
+melt.jan$tempclass <- ifelse(grepl("max", melt.jan$variable, fixed = TRUE), "max", ifelse(grepl("min", melt.jan$variable, fixed = TRUE), "min", ifelse(grepl("mean", melt.jan$variable, fixed = TRUE), "mean", "error")))
+
+melt.jan$sourceclass <- ifelse(grepl("_mcera5", melt.jan$variable, fixed = TRUE), "mcera5", ifelse(grepl("_ERA5", melt.jan$variable, fixed = TRUE), "ERA5", ifelse(grepl("_ws", melt.jan$variable, fixed = TRUE), "WS", "error")))
+
+levels(as.factor(melt.jan$tempclass))
+levels(as.factor(melt.jan$sourceclass))
+
+melt.jul <- melt(offsetplot.jul)
+rm(offsetplot.jul)
+
+melt.jul$tempclass <- ifelse(grepl("max", melt.jul$variable, fixed = TRUE), "max", ifelse(grepl("min", melt.jul$variable, fixed = TRUE), "min", ifelse(grepl("mean", melt.jul$variable, fixed = TRUE), "mean", "error")))
+
+melt.jul$sourceclass <- ifelse(grepl("_mcera5", melt.jul$variable, fixed = TRUE), "mcera5", ifelse(grepl("_ERA5", melt.jul$variable, fixed = TRUE), "ERA5", ifelse(grepl("_ws", melt.jul$variable, fixed = TRUE), "WS", "error")))
+
+levels(as.factor(melt.jul$tempclass))
+levels(as.factor(melt.jul$sourceclass))
+
+
+# coldest month:
+
+coldoffsetplot <-
+  ggplot(melt.jan) +
+  aes(x = value, y = variable, fill = sourceclass) +
+  geom_boxplot() +
+      geom_vline(xintercept=c(-0,0), linetype="dotted", col = "red", lwd = 1) +
+  scale_fill_manual(
+    values = c(ERA5 = "#f4d35e",
+    mcera5 = "#faf0ca",
+    WS = "#0d3b66"),
+    name = "Data source",
+    breaks = c("ERA5", "mcera5", "WS"),
+    labels = c("ERA5 raw", "ERA5 adjusted [mcera5]", "Weather station")) +
+  theme_minimal() + 
+  facet_grid(tempclass ~ . , 
+             scales = "free_y", 
+             switch = "y",                
+             labeller = as_labeller(
+                 c(max = "Max offset", 
+                   mean = "Mean offset", 
+                   min = "Min offset"))) +
+  labs(title = "Coldest month") +
+  ylab(NULL) + 
+  xlab("°C") + 
+  theme(axis.text.y = element_blank(),
+        plot.title = element_text(size = 22L,
+                                  face = "bold",
+                                  hjust = 0.5),
+        strip.text.y = element_text(size = 18)) +
+  guides(fill = guide_legend(reverse=TRUE))
+
+
+
+
+# warmest month:
+
+warmoffsetplot <-
+  ggplot(melt.jul) +
+  aes(x = value, y = variable, fill = sourceclass) +
+  geom_boxplot() +
+      geom_vline(xintercept=c(-0,0), linetype="dotted", col = "red", lwd = 1) +
+  scale_fill_manual(
+    values = c(ERA5 = "#f4d35e",
+    mcera5 = "#faf0ca",
+    WS = "#0d3b66"),
+    name = "Data source",
+    breaks = c("ERA5", "mcera5", "WS"),
+    labels = c("ERA5 raw", "ERA5 adjusted [mcera5]", "Weather station")) +
+  theme_minimal() + 
+  facet_grid(tempclass ~ . , 
+             scales = "free_y", 
+             switch = "y",                
+             labeller = as_labeller(
+                 c(max = "Max offset", 
+                   mean = "Mean offset", 
+                   min = "Min offset"))) +
+  labs(title = "Warmest month") +
+  ylab(NULL) + 
+  xlab("°C") + 
+  theme(axis.text.y = element_blank(),
+        plot.title = element_text(size = 22L,
+                                  face = "bold",
+                                  hjust = 0.5),
+        strip.text.y = element_text(size = 18)) +
+  guides(fill = guide_legend(reverse=TRUE))
+
+ggarrange(coldoffsetplot, warmoffsetplot, common.legend = TRUE, legend = "right")
+
+rm(coldoffsetplot)
+rm(warmoffsetplot)
+rm(melt.jan)
+rm(melt.jul)
 ```
 
 # Merge with tree data

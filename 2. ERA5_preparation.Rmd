@@ -1,20 +1,17 @@
----
-title: "ERA5"
-author: "Joan Diaz Calafat"
-date: "1/10/2022"
-output: pdf_document
----
+In this script, we will compile macroclimate data from different sources (ERA5 downloaded directly from the web, ERA5 downloaded through the mcera5 package and weather stations found close to our study sites). We will produce one file as output for each of these sources. Additional files with below-24h resolution data will also be exported to be used in script 2.5
 
 Load packages:
 
-```{r}
+```{r, message=FALSE}
 library(raster)
 library(reshape)
 library(reshape2)
 library(tidyr)
+library(dplyr)
+library(lubridate)
+library(zoo)
 ```
-
-# External temperature from ERA5 climatic models for offset calcualtion
+# ERA5 from web
 
 First, load the coordinate data of our experimental forests:
 
@@ -29,24 +26,18 @@ Load climatic ERA5 model:
 Data source: https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land?tab=overview and https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
 
 ```{r}
-meanair.temp.nc <- brick("./ERA5/ERA5_data.nc", varname = "t2m")
-maxair.temp.nc <- brick("./ERA5/ERA5_data.nc", varname = "mx2t")
-minair.temp.nc <- brick("./ERA5/ERA5_data.nc", varname = "mn2t")
-meansoil.temp.nc <- brick("./ERA5/ERA5_data.nc", varname = "stl1")
-wind.nc <- brick("./ERA5/ERA5_data.nc", varname = "fg10")
-snow.nc <- brick("./ERA5/ERA5_data.nc", varname = "sd")
-prec.nc <- brick("./ERA5/ERA5_data.nc", varname = "tp")
+air.temp.nc <- brick("./ERA5/ERA5_mean.nc")
+soil.temp.nc <- brick("./ERA5/ERA5_maxmin.nc", varname = "stl1")
+wind.nc <- brick("./ERA5/ERA5_wind.nc")
+snow.nc <- brick("./ERA5/ERA5_snowprec.nc", varname = "sd")
+prec.nc <- brick("./ERA5/ERA5_snowprec.nc", varname = "tp")
 ```
 And subset the ERA5 data to our climatic extent (earliest date: 2020-01-01; latest date: 2021-07-31).
 
 ```{r}
-meanair.temp.nc <- meanair.temp.nc[[which(getZ(meanair.temp.nc) >= as.Date("2020-01-01") & getZ(meanair.temp.nc) <= as.Date("2021-07-31"))]]
+air.temp.nc <- air.temp.nc[[which(getZ(air.temp.nc) >= as.Date("2020-01-01") & getZ(air.temp.nc) <= as.Date("2021-07-31"))]]
 
-maxair.temp.nc <- maxair.temp.nc[[which(getZ(maxair.temp.nc) >= as.Date("2020-01-01") & getZ(maxair.temp.nc) <= as.Date("2021-07-31"))]]
-
-minair.temp.nc <- minair.temp.nc[[which(getZ(minair.temp.nc) >= as.Date("2020-01-01") & getZ(minair.temp.nc) <= as.Date("2021-07-31"))]]
-
-meansoil.temp.nc <- meansoil.temp.nc[[which(getZ(meansoil.temp.nc) >= as.Date("2020-01-01") & getZ(meansoil.temp.nc) <= as.Date("2021-07-31"))]]
+soil.temp.nc <- soil.temp.nc[[which(getZ(soil.temp.nc) >= as.Date("2020-01-01") & getZ(soil.temp.nc) <= as.Date("2021-07-31"))]]
 
 wind.nc <- wind.nc[[which(getZ(wind.nc) >= as.Date("2020-01-01") & getZ(wind.nc) <= as.Date("2021-07-31"))]]
 
@@ -58,19 +49,15 @@ prec.nc <- prec.nc[[which(getZ(prec.nc) >= as.Date("2020-01-01") & getZ(prec.nc)
 Convert coordinates to spatial points: 
 
 ```{r}
-coordinates <- SpatialPoints(coords = coordinates, proj4string = crs(maxair.temp.nc))
+coordinates <- SpatialPoints(coords = coordinates, proj4string = crs(air.temp.nc))
 ```
 
 Extract data from experimental forest coordinates:
 
 ```{r}
-era5.meanair.temp <- data.frame(raster::extract(meanair.temp.nc, coordinates))
+era5.air.temp <- data.frame(raster::extract(air.temp.nc, coordinates))
 
-era5.maxair.temp <- data.frame(raster::extract(maxair.temp.nc, coordinates))
-
-era5.minair.temp <- data.frame(raster::extract(minair.temp.nc, coordinates))
-
-era5.meansoil.temp <- data.frame(raster::extract(meansoil.temp.nc, coordinates))
+era5.soil.temp <- data.frame(raster::extract(soil.temp.nc, coordinates))
 
 wind <- data.frame(raster::extract(wind.nc, coordinates))
 
@@ -78,10 +65,8 @@ snow <- data.frame(raster::extract(snow.nc, coordinates))
 
 prec <- data.frame(raster::extract(prec.nc, coordinates))
 
-rm(meanair.temp.nc)
-rm(maxair.temp.nc)
-rm(minair.temp.nc)
-rm(meansoil.temp.nc)
+rm(air.temp.nc)
+rm(soil.temp.nc)
 rm(wind.nc)
 rm(snow.nc)
 rm(prec.nc)
@@ -93,123 +78,117 @@ Format macroclimate data base:
 ```{r}
 #detach(package:reshape)
 
-rownames(era5.meanair.temp) <- df$Plot
-era5.meanair.temp <- data.frame(t(era5.meanair.temp))
-era5.meanair.temp$hour <- rownames(era5.meanair.temp)
-era5.meanair.temp$hour <- substr(era5.meanair.temp$hour, 2,11)
-era5.meanair.temp <- melt(era5.meanair.temp, variable.name = "site", value.name = "era5_meanair")
-names(era5.meanair.temp) <- c("date", "site", "air_meantemp")
-era5.meanair.temp$air_meantemp <- era5.meanair.temp$air_meantemp-273.15 # Kelvin to celsius
+rownames(era5.air.temp) <- df$Plot
+era5.air.temp <- data.frame(t(era5.air.temp))
+era5.air.temp$hour <- rownames(era5.air.temp)
+era5.air.temp$hour <- substr(era5.air.temp$hour, 2,11)
+era5.air.temp <- melt(era5.air.temp, variable.name = "site", value.name = "era5_meanair")
+names(era5.air.temp) <- c("date", "site", "air_temp")
+era5.air.temp$air_temp <- era5.air.temp$air_temp-273.15 # Kelvin to celsius
 
-rownames(era5.maxair.temp) <- df$Plot
-era5.maxair.temp <- data.frame(t(era5.maxair.temp))
-era5.maxair.temp$hour <- rownames(era5.maxair.temp)
-era5.maxair.temp$hour <- substr(era5.maxair.temp$hour, 2,11)
-era5.maxair.temp <- melt(era5.maxair.temp, variable.name = "site", value.name = "era5_maxair")
-names(era5.maxair.temp) <- c("date", "site", "air_maxtemp")
-era5.maxair.temp$air_maxtemp <- era5.maxair.temp$air_maxtemp-273.15 # Kelvin to celsius
-
-rownames(era5.minair.temp) <- df$Plot
-era5.minair.temp <- data.frame(t(era5.minair.temp))
-era5.minair.temp$hour <- rownames(era5.minair.temp)
-era5.minair.temp$hour <- substr(era5.minair.temp$hour, 2,11)
-era5.minair.temp <- melt(era5.minair.temp, variable.name = "site", value.name = "era5_minair")
-names(era5.minair.temp) <- c("date", "site", "air_mintemp")
-era5.minair.temp$air_mintemp <- era5.minair.temp$air_mintemp-273.15 # Kelvin to celsius
-
-rownames(era5.meansoil.temp) <- df$Plot
-era5.meansoil.temp <- data.frame(t(era5.meansoil.temp))
-era5.meansoil.temp$hour <- rownames(era5.meansoil.temp)
-era5.meansoil.temp$hour <- substr(era5.meansoil.temp$hour, 2,11)
-era5.meansoil.temp <- melt(era5.meansoil.temp, variable.name = "site", value.name = "era5_meansoil")
-names(era5.meansoil.temp) <- c("date", "site", "soil_meantemp")
-era5.meansoil.temp$soil_meantemp <- era5.meansoil.temp$soil_meantemp-273.15 # Kelvin to celsius
+rownames(era5.soil.temp) <- df$Plot
+era5.soil.temp <- data.frame(t(era5.soil.temp))
+era5.soil.temp$hour <- rownames(era5.soil.temp)
+era5.soil.temp$hour <- substr(era5.soil.temp$hour, 2,11)
+era5.soil.temp <- melt(era5.soil.temp, variable.name = "site", value.name = "era5_meansoil")
+names(era5.soil.temp) <- c("date", "site", "soil_temp")
+era5.soil.temp$soil_temp <- era5.soil.temp$soil_temp-273.15 # Kelvin to celsius
 
 rownames(wind) <- df$Plot
 wind <- data.frame(t(wind))
 wind$hour <- rownames(wind)
 wind$hour <- substr(wind$hour, 2,11)
-wind <- melt(wind, variable.name = "site", value.name = "wind")
+wind <- melt(wind, variable.name = "site", value.name = "era5_wind")
 names(wind) <- c("date", "site", "wind")
 
 rownames(snow) <- df$Plot
 snow <- data.frame(t(snow))
 snow$hour <- rownames(snow)
 snow$hour <- substr(snow$hour, 2,11)
-snow <- melt(snow, variable.name = "site", value.name = "snow")
+snow <- melt(snow, variable.name = "site", value.name = "era5_snow")
 names(snow) <- c("date", "site", "snow")
 
 rownames(prec) <- df$Plot
 prec <- data.frame(t(prec))
 prec$hour <- rownames(prec)
 prec$hour <- substr(prec$hour, 2,11)
-prec <- melt(prec, variable.name = "site", value.name = "prec")
+prec <- melt(prec, variable.name = "site", value.name = "era5_prec")
 names(prec) <- c("date", "site", "prec")
 
 rm(df)
 ```
 
-Extract ERA5 max, min and mean temperature raw data for Script 2.5
+Extract ERA5 mean temperature raw data for Script 2.5
 
 ```{r}
-sequence <- as.data.frame(seq(as.POSIXct('2020-01-01 00:00:00'), as.POSIXct('2020-01-31 23:00:00'), by = 'hour'))
+sequence <- as.data.frame(seq(as.POSIXct('2020-01-01 00:00:00'), as.POSIXct('2021-07-31 23:00:00'), by = 'hour'))
 
 names(sequence) <- "seq"
 
 sequence <- separate(sequence, seq, into = c("Date", "time"), sep = " (?=[^ ]+$)")
 
+era5.air.temp$time <- rep(sequence$time, length.out = length(era5.air.temp$date))
 
-era5.meanair.temp$time <- rep(sequence$time, length.out = length(era5.meanair.temp$date))
+era5.air.temp$date <- gsub(".", "-", era5.air.temp$date, fixed = TRUE)
 
-era5.minair.temp$time <- rep(sequence$time, length.out = length(era5.minair.temp$date))
-
-era5.maxair.temp$time <- rep(sequence$time, length.out = length(era5.maxair.temp$date))
-
-era5.meansoil.temp$time <- rep(sequence$time, length.out = length(era5.meansoil.temp$date))
-
-
-extract <- merge(era5.meansoil.temp, merge(era5.meanair.temp, merge(era5.minair.temp, era5.maxair.temp, by = c("site", "date", "time"))))
-
-extract$date <- gsub(".", "-", extract$date, fixed = TRUE)
-
-write.csv(extract, file = "./DATASETS/ERA5_raw_hour.csv", row.names = FALSE, quote = FALSE)
+write.csv(era5.air.temp, file = "./DATASETS/ERA5_raw_hour.csv", row.names = FALSE, quote = FALSE)
 
 rm(sequence)
-rm(extract)
 ```
 
 Temperature data in ERA5 has been downloaded at an hourly basis.
 Before merging all ERA5 temperatures, we want to aggregate them by date, and differently depending on the temperature variable (i.e. calculate the mean for the average daily temperature, but the min for all the min values recorded by day for the minimum daily temperature). We will also rename the "hour" variable to "Date".
 
 ```{r}
-era5.meanair.temp <- aggregate(list(era5_meanair = era5.meanair.temp$air_meantemp), by = list(Date = era5.meanair.temp$date, site = era5.meanair.temp$site), FUN = mean)
+era5.meanair.temp <- aggregate(list(era5_meanair = era5.air.temp$air_temp), by = list(Date = era5.air.temp$date, site = era5.air.temp$site), FUN = mean)
 
-era5.maxair.temp <- aggregate(list(era5_maxair = era5.maxair.temp$air_maxtemp), by = list(Date = era5.maxair.temp$date, site = era5.maxair.temp$site), FUN = max)
+era5.maxair.temp <- aggregate(list(era5_maxair = era5.air.temp$air_temp), by = list(Date = era5.air.temp$date, site = era5.air.temp$site), FUN = max)
 
-era5.minair.temp <- aggregate(list(era5_minair = era5.minair.temp$air_mintemp), by = list(Date = era5.minair.temp$date, site = era5.minair.temp$site), FUN = min)
+era5.minair.temp <- aggregate(list(era5_minair = era5.air.temp$air_temp), by = list(Date = era5.air.temp$date, site = era5.air.temp$site), FUN = min)
 
-era5.meansoil.temp <- aggregate(list(era5_meansoil = era5.meansoil.temp$soil_meantemp), by = list(Date = era5.meansoil.temp$date, site = era5.meansoil.temp$site), FUN = mean)
+era5.soil.temp <- aggregate(list(era5_meansoil = era5.soil.temp$soil_temp), by = list(Date = era5.soil.temp$date, site = era5.soil.temp$site), FUN = mean)
 
-wind <- aggregate(list(wind = wind$wind), by = list(Date = wind$date, site = wind$site), FUN = mean)
+wind <- aggregate(list(era5_wind = wind$wind), by = list(Date = wind$date, site = wind$site), FUN = max)
 
-snow <- aggregate(list(snow = snow$snow), by = list(Date = snow$date, site = snow$site), FUN = mean)
+snow <- aggregate(list(era5_snow = snow$snow), by = list(Date = snow$date, site = snow$site), FUN = sum)
 
-prec <- aggregate(list(prec = prec$prec), by = list(Date = prec$date, site = prec$site), FUN = mean)
+prec <- aggregate(list(era5_prec = prec$prec), by = list(Date = prec$date, site = prec$site), FUN = sum)
 ```
 
 And now we can merge such data:
 
 ```{r}
-era5.temp <- merge_recurse(list(era5.meanair.temp, era5.maxair.temp, era5.minair.temp, era5.meansoil.temp, wind, snow, prec))
+era5.temp <- merge_recurse(list(era5.meanair.temp, era5.maxair.temp, era5.minair.temp, era5.soil.temp, wind, snow, prec))
 ```
 
-Now we need to make dates into the same format as in the other datasets.
-Currently, in the ERA5 R object, dates appear as YYYY.MM.DD. We want "-" instead of "." separators. Also, we will turn this variable into a POSIXct class.
+Format "Date" and turn it into POSIXct class.
 
 ```{r}
 era5.temp$Date <- gsub(".", "-", era5.temp$Date, fixed = TRUE)
 
 era5.temp$Date <- as.POSIXct(era5.temp$Date, format = "%Y-%m-%d")
+```
+
+Calculate rolling mean temperature and precipitation for each previous 5 days:
+
+```{r}
+era5.temp <- era5.temp %>%
+    dplyr::arrange(Date) %>% 
+    dplyr::arrange(desc(site)) %>% 
+    dplyr::group_by(site) %>% 
+    dplyr::mutate(era5_prev_av_prec = lag(zoo::rollmean(era5_prec, 
+                                               k = 5, 
+                                               fill = NA), n = 3)) %>% 
+  dplyr::ungroup()
+
+era5.temp <- era5.temp %>%
+    dplyr::arrange(Date) %>% 
+    dplyr::arrange(desc(site)) %>% 
+    dplyr::group_by(site) %>% 
+    dplyr::mutate(era5_prev_av_temp = lag(zoo::rollmean(era5_meanair, 
+                                               k = 5, 
+                                               fill = NA), n = 3)) %>% 
+  dplyr::ungroup()
 ```
 
 Export the dataset:
@@ -220,3 +199,571 @@ write.csv(era5.temp, file = "./DATASETS/ERA5_temp.csv", row.names = FALSE, quote
 rm(list = ls())
 ```
 
+
+# 'mcera5' package
+
+Install *mcera5* package:
+
+```{r}
+remotes::install_github("dklinges9/mcera5")
+
+library(mcera5)
+```
+
+set UID and API key:
+
+```{r}
+uid <- "109976"
+cds_api_key <- "c88eab9f-cb84-4237-99ce-ef2f12bcfcfc"
+```
+
+Use `ecmwfr` package to register your machine with your  credentials:
+
+```{r}
+ecmwfr::wf_set_key(user = uid,key = cds_api_key,service = "cds")
+```
+
+Designate desired bounding coordinates (in WGS84 / EPSG:4326)
+
+```{r}
+xmn <- 5
+xmx <- 20 
+ymn <- 49 
+ymx <- 65 
+```
+
+Designate a desired temporal extent. We will download years separately and also set the start and ending of each month.
+
+```{r}
+# Full period
+st_time <-  lubridate::ymd("2020:01:01") 
+en_time <-  lubridate::ymd("2021:07:31")
+
+# year 2020
+st_time2020 <-  lubridate::ymd("2020:01:01") 
+en_time2020 <-  lubridate::ymd("2020:07:31")
+
+# year 2021
+st_time2021 <-  lubridate::ymd("2021:01:01") 
+en_time2021 <-  lubridate::ymd("2021:07:31")
+
+# and months separately:
+
+st_jan2020 <-  lubridate::ymd("2020:01:01") 
+en_jan2020 <-  lubridate::ymd("2020:01:31")
+
+st_jul2020 <-  lubridate::ymd("2020:07:01") 
+en_jul2020 <-  lubridate::ymd("2020:07:31")
+
+st_jan2021 <-  lubridate::ymd("2021:01:01") 
+en_jan2021 <-  lubridate::ymd("2021:01:31")
+
+st_jul2021 <-  lubridate::ymd("2021:07:01") 
+en_jul2021 <-  lubridate::ymd("2021:07:31")
+```
+
+Set a unique prefix for the filename, and the file path for downloaded .nc files
+
+```{r}
+file_prefix <- "mcera5" 
+
+file_path <- paste(getwd(),"/mcera5", sep = "")
+```
+
+Build requests:
+
+```{r}
+req2020 <- build_era5_request(xmin = xmn, xmax = xmx, ymin = ymn, ymax = ymx, start_time = st_time2020, end_time = en_time2020, outfile_name = file_prefix)
+
+req2021 <- build_era5_request(xmin = xmn, xmax = xmx, ymin = ymn, ymax = ymx, start_time = st_time2021, end_time = en_time2021, outfile_name = file_prefix)
+```
+
+Submit requests:
+
+```{r}
+request_era5(request = req2020, uid = uid, out_path = file_path, overwrite = TRUE) #this can take some time
+
+request_era5(request = req2021, uid = uid, out_path = file_path, overwrite = TRUE) #this can take some time
+```
+
+Extract temperature data:
+
+```{r}
+my_nc2020 <- paste0(file_path, "/mcera5_2020.nc")
+my_nc2021 <- paste0(file_path, "/mcera5_2021.nc")
+
+df <- read.table(file = "./ERA5/coordinates.txt", header = T)
+
+x <- df$lon
+y <- df$lat
+
+# Arville. 
+   # Warmest month: July 2020
+   # Coldest month: January 2021
+
+arville.warm <- extract_clim(nc = my_nc2020, long =  x[1],  lat   =  y[1], start_time = st_jul2020,  end_time = en_jul2020)
+
+arville.warm$site <- "Arville"
+
+arville.cold <- extract_clim(nc = my_nc2021, long =  x[1],  lat   =  y[1], start_time = st_jan2021,  end_time = en_jan2021)
+
+arville.cold$site <- "Arville"
+
+
+# Hochwald
+   # Warmest month: July 2020
+   # Coldest month: January 2021
+
+hochwald.warm <- extract_clim(nc = my_nc2020, long =  x[2],  lat   =  y[2], start_time = st_jul2020,  end_time = en_jul2020)
+
+hochwald.warm$site <- "Hochwald"
+
+hochwald.cold <- extract_clim(nc = my_nc2021, long =  x[2],  lat   =  y[2], start_time = st_jan2021,  end_time = en_jan2021)
+
+hochwald.cold$site <- "Hochwald"
+
+
+# Vivarp
+   # Warmest month (air): 2021
+   # Coldest month (air): 2021
+
+vivarp.warm <- extract_clim(nc = my_nc2021, long =  x[3],  lat   =  y[3], start_time = st_jul2021,  end_time = en_jul2021)
+
+vivarp.warm$site <- "Vivarp"
+
+vivarp.cold <- extract_clim(nc = my_nc2021, long =  x[3],  lat   =  y[3], start_time = st_jan2021,  end_time = en_jan2021)
+
+vivarp.cold$site <- "Vivarp"
+
+
+# Siljan
+   # Warmest month: July 2020
+   # Coldest month: January 2021
+
+siljan.warm <- extract_clim(nc = my_nc2020, long =  x[4],  lat   =  y[4], start_time = st_jul2020,  end_time = en_jul2020)
+
+siljan.warm$site <- "Siljan"
+
+siljan.cold <- extract_clim(nc = my_nc2021, long =  x[4],  lat   =  y[4], start_time = st_jan2021,  end_time = en_jan2021)
+
+siljan.cold$site <- "Siljan"
+
+
+# Sandsjö
+   # Warmest month: July 2020
+   # Coldest month: January 2020
+
+sandsjo.warm <- extract_clim(nc = my_nc2020, long =  x[5],  lat   =  y[5], start_time = st_jul2020,  end_time = en_jul2020)
+
+sandsjo.warm$site <- "Sandsjo"
+
+sandsjo.cold <- extract_clim(nc = my_nc2020, long =  x[5],  lat   =  y[5], start_time = st_jan2020,  end_time = en_jan2020)
+
+sandsjo.cold$site <- "Sandsjo"
+
+
+# Merge everything:
+
+mcera5 <- rbind(arville.cold, arville.warm, hochwald.cold, hochwald.warm, vivarp.cold, vivarp.warm, siljan.cold, siljan.warm, sandsjo.cold, sandsjo.warm)
+```
+
+Calculate daily minimum and maximum temperature from mean values:
+
+```{r}
+mcera5 <- dplyr::rename(mcera5,
+         "datetime" = "obs_time",
+         "mcera5_airtemp" = "temperature")
+
+write.csv(mcera5, file = "./DATASETS/mcera5_raw.csv", quote = FALSE, row.names = FALSE) # save a version of this dataset for plots in script 2.5
+
+mcera5$date <- substr(mcera5$datetime, 1,10) # extract dates without time
+
+mcera5_min <- aggregate(list(minair_mcera5 = mcera5$mcera5_airtemp), by = list(site = mcera5$site, Date = mcera5$date), FUN = min)
+
+mcera5_mean <- aggregate(list(meanair_mcera5 = mcera5$mcera5_airtemp), by = list(site = mcera5$site, Date = mcera5$date), FUN = mean)
+
+mcera5_max <- aggregate(list(maxair_mcera5 = mcera5$mcera5_airtemp), by = list(site = mcera5$site, Date = mcera5$date), FUN = max)
+```
+
+Extract daily precipitation data:
+
+```{r}
+# Arville
+arville.warm.prec <-  extract_precip(nc = my_nc2020, long = x[1], lat = y[1], start_time = st_jul2020, end_time = en_jul2020, convert_daily = TRUE)
+
+arville.warm.prec <- data.frame(mcera5_prec = arville.warm.prec, Date = seq(as.Date(st_jul2020), as.Date(en_jul2020), "days"), site = "Arville")
+
+arville.cold.prec <-  extract_precip(nc = my_nc2021, long = x[1], lat = y[1], start_time = st_jan2021, end_time = en_jan2021, convert_daily = TRUE)
+
+arville.cold.prec <- data.frame(mcera5_prec = arville.cold.prec, Date = seq(as.Date(st_jan2021), as.Date(en_jan2021), "days"), site = "Arville")
+
+arville.prec <- rbind(arville.warm.prec, arville.cold.prec)
+rm(arville.warm.prec)
+rm(arville.cold.prec)
+
+# Hochwald
+hochwald.warm.prec <-  extract_precip(nc = my_nc2020, long = x[2], lat = y[2], start_time = st_jul2020, end_time = en_jul2020, convert_daily = TRUE)
+
+hochwald.warm.prec <- data.frame(mcera5_prec = hochwald.warm.prec, Date = seq(as.Date(st_jul2020), as.Date(en_jul2020), "days"), site = "Hochwald")
+
+hochwald.cold.prec <-  extract_precip(nc = my_nc2021, long = x[2], lat = y[2], start_time = st_jan2021, end_time = en_jan2021, convert_daily = TRUE)
+
+hochwald.cold.prec <- data.frame(mcera5_prec = hochwald.cold.prec, Date = seq(as.Date(st_jan2021), as.Date(en_jan2021), "days"), site = "Hochwald")
+
+hochwald.prec <- rbind(hochwald.warm.prec, hochwald.cold.prec)
+rm(hochwald.warm.prec)
+rm(hochwald.cold.prec)
+
+# Vivarp
+vivarp.warm.prec <-  extract_precip(nc = my_nc2021, long = x[3], lat = y[3], start_time = st_jul2021, end_time = en_jul2021, convert_daily = TRUE)
+
+vivarp.warm.prec <- data.frame(mcera5_prec = vivarp.warm.prec, Date = seq(as.Date(st_jul2021), as.Date(en_jul2021), "days"), site = "Vivarp")
+
+vivarp.cold.prec <-  extract_precip(nc = my_nc2021, long = x[3], lat = y[3], start_time = st_jan2021, end_time = en_jan2021, convert_daily = TRUE)
+
+vivarp.cold.prec <- data.frame(mcera5_prec = vivarp.cold.prec, Date = seq(as.Date(st_jan2021), as.Date(en_jan2021), "days"), site = "Vivarp")
+
+vivarp.prec <- rbind(vivarp.warm.prec, vivarp.cold.prec)
+rm(vivarp.warm.prec)
+rm(vivarp.cold.prec)
+
+# Siljan
+siljan.warm.prec <-  extract_precip(nc = my_nc2020, long = x[4], lat = y[4], start_time = st_jul2020, end_time = en_jul2020, convert_daily = TRUE)
+
+siljan.warm.prec <- data.frame(mcera5_prec = siljan.warm.prec, Date = seq(as.Date(st_jul2020), as.Date(en_jul2020), "days"), site = "Siljan")
+
+siljan.cold.prec <-  extract_precip(nc = my_nc2021, long = x[4], lat = y[4], start_time = st_jan2021, end_time = en_jan2021, convert_daily = TRUE)
+
+siljan.cold.prec <- data.frame(mcera5_prec = siljan.cold.prec, Date = seq(as.Date(st_jan2021), as.Date(en_jan2021), "days"), site = "Siljan")
+
+siljan.prec <- rbind(siljan.warm.prec, siljan.cold.prec)
+rm(siljan.warm.prec)
+rm(siljan.cold.prec)
+
+# Sandsjö
+
+sandsjo.warm.prec <-  extract_precip(nc = my_nc2020, long = x[5], lat = y[5], start_time = st_jul2020, end_time = en_jul2020, convert_daily = TRUE)
+
+sandsjo.warm.prec <- data.frame(mcera5_prec = sandsjo.warm.prec, Date = seq(as.Date(st_jul2020), as.Date(en_jul2020), "days"), site = "Sandsjo")
+
+sandsjo.cold.prec <-  extract_precip(nc = my_nc2020, long = x[5], lat = y[5], start_time = st_jan2020, end_time = en_jan2020, convert_daily = TRUE)
+
+sandsjo.cold.prec <- data.frame(mcera5_prec = sandsjo.cold.prec, Date = seq(as.Date(st_jan2020), as.Date(en_jan2020), "days"), site = "Sandsjo")
+
+sandsjo.prec <- rbind(sandsjo.warm.prec, sandsjo.cold.prec)
+rm(sandsjo.warm.prec)
+rm(sandsjo.cold.prec)
+```
+
+Merge precipitation data aross al sites:
+
+```{r}
+mcera5_prec <- rbind(arville.prec, hochwald.prec, vivarp.prec, siljan.prec, sandsjo.prec)
+
+mcera5_prec$Date <- as.character(mcera5_prec$Date)
+
+rm(arville.prec)
+rm(hochwald.prec)
+rm(vivarp.prec)
+rm(siljan.prec)
+rm(sandsjo.prec)
+```
+
+Merge all mcera5 datasets:
+
+```{r}
+mcera5_merged <- merge(merge(merge(mcera5_min, mcera5_mean, by = c("Date", "site")), mcera5_max, by = c("Date", "site")), mcera5_prec, by = c("Date", "site"))
+
+rm(mcera5_min)
+rm(mcera5_max)
+rm(mcera5_mean)
+rm(mcera5_prec)
+```
+
+Calculate rolling mean temperature and precipitation for the previous five days:
+
+```{r}
+mcera5_merged <- mcera5_merged %>%
+    dplyr::arrange(Date) %>% 
+    dplyr::arrange(desc(site)) %>% 
+    dplyr::group_by(site) %>% 
+    dplyr::mutate(mcera5_prev_av_temp = lag(zoo::rollmean(meanair_mcera5, 
+                                               k = 5, 
+                                               fill = NA), n = 3)) %>%
+  dplyr::ungroup()
+
+mcera5_merged <- mcera5_merged %>%
+    dplyr::arrange(Date) %>% 
+    dplyr::arrange(desc(site)) %>% 
+    dplyr::group_by(site) %>% 
+    dplyr::mutate(mcera5_prev_av_prec = lag(zoo::rollmean(mcera5_prec, 
+                                               k = 5, 
+                                               fill = NA), n = 3)) %>% 
+  dplyr::ungroup()
+```
+
+Save the dataset:
+
+```{r}
+write.csv(mcera5_merged, file = "./DATASETS/mcera5.csv", quote = FALSE, row.names = FALSE)
+
+# Què feim amb soil data? mcera5 ho descarrega també?
+
+rm(list = ls())
+```
+
+
+# Weather station data
+
+Load data from all weather stations:
+
+```{r}
+# Arville_merged
+
+arville.station <- read.csv("./WEATHER STATIONS/Arville_station6476.csv", header = TRUE)
+
+arville.station <- arville.station[which(arville.station$code == 6476),] # we want to keep only the station with code 6476
+
+# Hochwald
+
+hochwald.station <- read.table("./WEATHER STATIONS/Hochwald_station_airtemp.txt", header = TRUE, sep = ";")
+
+# Vivarp
+
+vivarp.station <- read.csv("./WEATHER STATIONS/Vivarp_station.csv", header = TRUE, dec = ".", sep = ";", fileEncoding = "UTF-8-BOM")
+
+# Siljan
+
+siljan.station <- read.table("./WEATHER STATIONS/Siljan_station.txt", header = TRUE, sep = ";", fileEncoding = "UTF-8-BOM")
+
+# Sandsjö
+
+sandsjo.station <- read.table("./WEATHER STATIONS/Sandsjo_station.txt", header = TRUE, sep = ";", fileEncoding = "UTF-8-BOM")
+```
+
+We want to keep the following variables: date, time, site, mean air temperature. Let's do that for the weather station data of all sites, using common variable names and calculating daily min, mean and max temperature values.
+
+```{r}
+# ARVILLE
+
+# Create site variable
+arville.station$site <- "Arville"
+
+# Select variables of interest
+
+arville.station <- separate(arville.station, timestamp, into = c("date", "time"), sep = "T")
+
+arville.station$datetime <- paste(arville.station$date, " ", arville.station$time)
+  
+arville.station$datetime <- as.POSIXct(arville.station$datetime, format = "%F %T")
+
+arville.station <- arville.station[,which(names(arville.station) %in% c("site", "datetime", "date", "temp", "temp_min", "temp_max"))]
+
+arville.station <- dplyr::rename(arville.station,
+                          "station_meanair" = "temp",
+                          "station_minair" = "temp_min",
+                          "station_maxair" = "temp_max")
+                          
+
+arville.dates <- seq(as.Date("2020-06-25"),as.Date("2021-01-31"), by = 'day')
+
+arville.station$date <- substr(arville.station$datetime, 1, 10)
+
+arville.station$date <- as.Date(arville.station$date)
+
+arville.station <- arville.station[which(arville.station$date %in% arville.dates),]
+
+# There is no values for maximum and minimum temperature in all timepoints. We will create our own daily maximum and minimum values from hourly data
+
+arville.station.hourly <- arville.station # backup of hourly data for future graphs
+
+arville.station.minair <- aggregate(list(station_minair = arville.station$station_meanair), by = list(date = arville.station$date), FUN = min)
+
+arville.station.maxair <- aggregate(list(station_maxair = arville.station$station_meanair), by = list(date = arville.station$date), FUN = max)
+
+arville.station.meanair <- aggregate(list(station_meanair = arville.station$station_meanair), by = list(date = arville.station$date), FUN = mean)
+
+# merge
+
+arville.station <- merge_recurse(list(arville.station.minair, arville.station.maxair, arville.station.meanair))
+
+rm(arville.station.maxair)
+rm(arville.station.meanair)
+rm(arville.station.minair)
+
+arville.station$site <- "Arville"
+
+rm(arville.dates)
+
+#HOCHWALD
+
+# Dates and hours are set together in the same variable with the format YYYYMMDDHH. Let's first split that.
+
+hochwald.station$date <- substr(hochwald.station$MESS_DATUM, 1, 8)
+
+hochwald.station$hour <- substr(hochwald.station$MESS_DATUM, 9, 10)
+
+# Set dates as dates
+hochwald.station$date <- as.Date(hochwald.station$date, format = "%Y%m%d")
+
+hochwald.station$datetime <- paste(hochwald.station$date, paste(hochwald.station$hour,":00:00", sep = ""))
+
+hochwald.station$datetime <- as.POSIXct(hochwald.station$datetime, format = "%F %T")
+
+hochwald.station <- hochwald.station[,names(hochwald.station) %in% c("site", "datetime", "date", "TT_TU")]
+
+hochwald.station <- dplyr::rename(hochwald.station,
+                           "station_meanair" = "TT_TU")
+
+# There is no maximum or minimum temperature for Hochwald, but data is recorded at an hourly basis, so we will calculate daily maximum, mean and min temperatures
+
+hochwald.station.hourly <- hochwald.station # backup of daily data for future graphs
+
+hochwald.dates <- seq(as.Date("2020-06-25"),as.Date("2021-01-31"), by = 'day')
+
+hochwald.station <- hochwald.station[which(hochwald.station$date %in% hochwald.dates),]
+
+hochwald.station.minair <- aggregate(list(station_minair = hochwald.station$station_meanair), by = list(date = hochwald.station$date), FUN = min)
+
+hochwald.station.maxair <- aggregate(list(station_maxair = hochwald.station$station_meanair), by = list(date = hochwald.station$date), FUN = max)
+
+hochwald.station.meanair <- aggregate(list(station_meanair = hochwald.station$station_meanair), by = list(date = hochwald.station$date), FUN = mean)
+
+# Merge all:
+
+hochwald.station <- merge_recurse(list(hochwald.station.minair, hochwald.station.maxair, hochwald.station.meanair))
+
+rm(hochwald.station.maxair)
+rm(hochwald.station.meanair)
+rm(hochwald.station.minair)
+
+hochwald.station$site <- "Hochwald"
+
+rm(hochwald.dates)
+
+# VIVARP
+
+vivarp.station$datetime <- paste(vivarp.station$Datum, " ", vivarp.station$Tid)
+
+vivarp.station$datetime <- as.POSIXct(vivarp.station$datetime, format = "%F %T")
+
+vivarp.station <- vivarp.station[,names(vivarp.station) %in% c("datetime", "Datum", "Lufttemperatur")]
+
+vivarp.station <- dplyr::rename(vivarp.station,
+                         "station_meanair" = "Lufttemperatur",
+                         "date" = "Datum")
+
+vivarp.station$site <- "Vivarp"
+
+vivarp.dates <- c(seq(as.Date("2019-12-25"),as.Date("2020-01-31"), by = 'day'), seq(as.Date("2021-06-25"),as.Date("2021-07-31"), by = 'day'))
+
+vivarp.station$date <- as.Date(vivarp.station$date)
+
+vivarp.station <- vivarp.station[which(vivarp.station$date %in% vivarp.dates),]
+
+# Calculate daily maximum and minimum temperature from hourly data
+
+vivarp.station.hourly <- vivarp.station # backup of daily data for future graphs
+
+vivarp.station.minair <- aggregate(list(station_minair = vivarp.station$station_meanair), by = list(date = vivarp.station$date), FUN = min)
+
+vivarp.station.maxair <- aggregate(list(station_maxair = vivarp.station$station_meanair), by = list(date = vivarp.station$date), FUN = max)
+
+vivarp.station.meanair <- aggregate(list(station_meanair = vivarp.station$station_meanair), by = list(date = vivarp.station$date), FUN = mean)
+
+vivarp.station <- merge_recurse(list(vivarp.station.minair, vivarp.station.maxair, vivarp.station.meanair))
+
+rm(vivarp.station.maxair)
+rm(vivarp.station.meanair)
+rm(vivarp.station.minair)
+
+vivarp.station$site <- "Vivarp"
+
+rm(vivarp.dates)
+
+# SILJAN
+
+siljan.station <- siljan.station[,which(names(siljan.station) %in% c("Datum", "air_meantemp", "air_maxtemp", "air_mintemp", "site"))]
+
+siljan.station <- rename(siljan.station,
+                         "date" = "Datum",
+                         "station_meanair" = "air_meantemp",
+                         "station_minair" = "air_mintemp",
+                         "station_maxair" = "air_maxtemp")
+
+siljan.station$site <- "Siljan"
+
+siljan.dates <- seq(as.Date("2020-06-25"),as.Date("2021-01-31"), by = 'day')
+
+siljan.station$date <- as.Date(siljan.station$date)
+
+siljan.station <- siljan.station[which(siljan.station$date %in% siljan.dates),]
+
+rm(siljan.dates)
+
+# SANDSJÖ
+
+sandsjo.station <- sandsjo.station[,which(names(sandsjo.station) %in% c("Datum", "air_meantemp", "air_maxtemp", "air_mintemp", "site"))]
+
+sandsjo.station <- rename(sandsjo.station,
+                         "date" = "Datum",
+                         "station_meanair" = "air_meantemp",
+                         "station_minair" = "air_mintemp",
+                         "station_maxair" = "air_maxtemp")
+
+sandsjo.station$site <- "Sandsjo"
+
+sandsjo.dates <- seq(as.Date("2020-06-25"),as.Date("2021-01-31"), by = 'day')
+
+sandsjo.station$date <- as.Date(sandsjo.station$date)
+
+sandsjo.station <- sandsjo.station[which(sandsjo.station$date %in% sandsjo.dates),]
+
+rm(sandsjo.dates)
+```
+
+Merge all weather station data:
+
+```{r}
+weather.stations <- rbind(arville.station, hochwald.station, vivarp.station, siljan.station, sandsjo.station)
+```
+
+Save data from weather stations with temperature values at a resolution lower than 24h for script 2.5
+
+```{r}
+#missing columns
+hochwald.station.hourly$site <- "Hochwald"
+hochwald.station.hourly$station_minair <- NA
+hochwald.station.hourly$station_maxair <- NA
+vivarp.station.hourly$station_minair <- NA
+vivarp.station.hourly$station_maxair <- NA
+
+weather.stations.hourly <- rbind(arville.station.hourly, hochwald.station.hourly, vivarp.station.hourly)
+
+write.csv(weather.stations.hourly, file = "./DATASETS/ws_hourlydata.csv", quote = FALSE, row.names = FALSE)
+```
+
+Calculate rolling mean temperature for the previous five days. No precipitation this time:
+
+```{r}
+weather.stations <- weather.stations %>%
+    dplyr::arrange(date) %>% 
+    dplyr::arrange(desc(site)) %>% 
+    dplyr::group_by(site) %>% 
+    dplyr::mutate(ws_prev_av_temp = lag(zoo::rollmean(station_meanair, 
+                                               k = 5, 
+                                               fill = NA), n = 3)) %>%
+  dplyr::ungroup()
+```
+
+Save dataset:
+
+```{r}
+# rename "date" to "Date" for consistency
+weather.stations <- dplyr::rename(weather.stations,
+                              "Date" = "date")
+# save
+write.csv(weather.stations, file = "./DATASETS/weatherstations_merged.csv", quote = FALSE, row.names = FALSE)
+
+rm(list = ls())
+```

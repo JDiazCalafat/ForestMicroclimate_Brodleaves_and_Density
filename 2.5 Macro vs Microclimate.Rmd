@@ -8,6 +8,13 @@ logger.temp <- read.csv("./DATASETS/rawtemp_min.csv", header = TRUE)
 ERA5.temp <- read.csv("./DATASETS/ERA5_raw_hour.csv", header = TRUE)
 ```
 
+We will also load temperature data from local weather stations to see how much does ERA5 and our microclimate data differ from these:
+
+```{r}
+station.hochwald <- read.table("./DATASETS/Hochwald_station.txt", sep = ";", header = TRUE)
+```
+
+
 ... and some packages:
 
 ```{r}
@@ -35,18 +42,33 @@ logger.temp.2$datetime <- paste(logger.temp.2$Date, paste(logger.temp.2$hour,":0
 logger.temp.2$datetime <- as.POSIXct(logger.temp.2$datetime, format = "%F %T")
 ```
 
-
-Merge both datasets:
+Merge all datasets:
 ```{r}
+# ERA5 and microclimate
 ERA5.temp$datetime <- paste(ERA5.temp$date, ERA5.temp$time) 
 
 ERA5.temp$datetime <- as.POSIXct(ERA5.temp$datetime, format = "%F %T")
 
-temp <- merge(logger.temp.2, ERA5.temp, by = c("site", "datetime"))
+temp2 <- merge(logger.temp.2, ERA5.temp, by = c("site", "datetime"))
 
 rm(logger.temp)
 rm(logger.temp.2)
 rm(ERA5.temp)
+
+# Weather stations
+temp3 <- merge(temp2, station.hochwald, by = c("site", "datetime"), all.x = TRUE)
+
+rm(temp2)
+rm(station.hochwald)
+
+# mcera5
+mcera5 <- read.csv("./DATASETS/mcera5.csv", header = TRUE)
+
+mcera5$datetime <- as.POSIXct(mcera5$datetime, format = "%F %T")
+
+temp <- merge(temp3, mcera5, by = c("site", "datetime"), all.x = TRUE)
+
+# OJO!, QUE ELS VALORS DE TEMPERATURA D'AIRE D'AQUESTES DATABASES POTSER S'HAN COPIAT ALS VALORS DE TEMPERATURA DEL SOIL!!!
 ```
 
 
@@ -99,10 +121,9 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
     geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
    ggtitle("Arville coldest month")
   
-rm(arville.week.cold)
+#rm(arville.week.cold)
 
 # Same with warmest month (july):
-
 
 onewarmweek <- seq(as.POSIXct('2020-7-1 00:00:00'),as.POSIXct('2020-7-8 00:00:00'), by = '1 hour')
 
@@ -150,7 +171,7 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
    ggtitle("Arville warmest month")
   
 rm(arville)
-rm(arville.week.warm)
+#rm(arville.week.warm)
 ```
 
 Hochwald:
@@ -204,11 +225,13 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
   geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 38),]$loggertemp)) +
   geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.cold[which(hochwald.week.cold$Plot == 40),]$loggertemp)) + 
   geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
-    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
-    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+    geom_line(aes(y = maxair_mcera5), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = minair_mcera5), colour = "orange", lwd = 2) +
+    geom_line(aes(y = hochwald_station_air), colour = "green", lwd = 2) +
+      geom_line(aes(y = mcera5_airtemp), colour = "purple", lwd = 2) +
   ggtitle("Hochwald coldest month")
   
-rm(hochwald.week.cold)
+#rm(hochwald.week.cold)
 
 # Same with warmest month (july):
 
@@ -255,12 +278,14 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
   geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 38),]$loggertemp)) +
   geom_line(color = "gray45", alpha = 0.5, lwd = 1, aes(y= hochwald.week.warm[which(hochwald.week.warm$Plot == 40),]$loggertemp)) + 
   geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
-    geom_line(aes(y = air_maxtemp), colour = "dark red", lwd = 2) +
-    geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
+    geom_line(aes(y = maxair_mcera5), colour = "dark red", lwd = 2) +
+    geom_line(aes(y = minair_mcera5), colour = "orange", lwd = 2) +
+    geom_line(aes(y = hochwald_station_air), colour = "green", lwd = 2) +      
+  geom_line(aes(y = mcera5_airtemp), colour = "purple", lwd = 2) +
   ggtitle("Hochwald warmest month")
 
 rm(hochwald)
-rm(hochwald.week.warm)
+#rm(hochwald.week.warm)
 ```
 
 Vivarp:
@@ -320,7 +345,7 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
     geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
   ggtitle("Vivarp coldest month")
   
-rm(vivarp.week.cold)
+#rm(vivarp.week.cold)
 
 # Same with warmest month (july):
 
@@ -376,7 +401,7 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
   ggtitle("Vivarp warmest month")
 
 rm(vivarp)
-rm(vivarp.week.warm)
+#rm(vivarp.week.warm)
 ```
 
 Siljan:
@@ -433,7 +458,7 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
     geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
   ggtitle("Siljan coldest month")
   
-rm(siljan.week.cold)
+#rm(siljan.week.cold)
 
 # Same with warmest month (july):
 
@@ -485,7 +510,7 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
   ggtitle("Hochwald warmest month")
 
 rm(siljan)
-rm(siljan.week.warm)
+#rm(siljan.week.warm)
 ```
 
 Sandsjö:
@@ -545,7 +570,7 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
     geom_line(aes(y = air_mintemp), colour = "orange", lwd = 2) +
   ggtitle("Sandsjö coldest month")
 
-rm(sandsjo.week.cold)
+#rm(sandsjo.week.cold)
 
 # Same with warmest month (july):
 
@@ -600,12 +625,12 @@ geom_line(aes(y = air_meantemp), colour = "red", lwd = 2) +
   ggtitle("Sandsjö warmest month")
 
 rm(sandsjo)
-rm(sandsjo.week.warm)
+#rm(sandsjo.week.warm)
 
 rm(onecoldweek)
 rm(onewarmweek)
 
-rm(temp)
+#rm(temp)
 ```
 
 
