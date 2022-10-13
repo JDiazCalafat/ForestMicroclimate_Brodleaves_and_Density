@@ -148,11 +148,19 @@ era5.minair.temp <- aggregate(list(era5_minair = era5.air.temp$air_temp), by = l
 
 era5.soil.temp <- aggregate(list(era5_meansoil = era5.soil.temp$soil_temp), by = list(Date = era5.soil.temp$date, site = era5.soil.temp$site), FUN = mean)
 
+era5.soil.temp$Date <- gsub(".", "-", era5.soil.temp$Date, fixed = TRUE)
+
 wind <- aggregate(list(era5_wind = wind$wind), by = list(Date = wind$date, site = wind$site), FUN = max)
+
+wind$Date <- gsub(".", "-", wind$Date, fixed = TRUE)
 
 snow <- aggregate(list(era5_snow = snow$snow), by = list(Date = snow$date, site = snow$site), FUN = sum)
 
+snow$Date <- gsub(".", "-", snow$Date, fixed = TRUE)
+
 prec <- aggregate(list(era5_prec = prec$prec), by = list(Date = prec$date, site = prec$site), FUN = sum)
+
+prec$Date <- gsub(".", "-", prec$Date, fixed = TRUE)
 ```
 
 And now we can merge such data:
@@ -161,11 +169,9 @@ And now we can merge such data:
 era5.temp <- merge_recurse(list(era5.meanair.temp, era5.maxair.temp, era5.minair.temp, era5.soil.temp, wind, snow, prec))
 ```
 
-Format "Date" and turn it into POSIXct class.
+Turn "Date" into POSIXct class.
 
 ```{r}
-era5.temp$Date <- gsub(".", "-", era5.temp$Date, fixed = TRUE)
-
 era5.temp$Date <- as.POSIXct(era5.temp$Date, format = "%Y-%m-%d")
 ```
 
@@ -236,12 +242,16 @@ Designate a desired temporal extent. We will download years separately and also 
 
 ```{r}
 # Full period
-st_time <-  lubridate::ymd("2020:01:01") 
+st_time <-  lubridate::ymd("2019:12:25") # a bit before the real start (01/01/2020) so that we can calculate the 5 day rolling mean
 en_time <-  lubridate::ymd("2021:07:31")
+
+# year 2019
+st_time2019 <-  lubridate::ymd("2019:12:25") 
+en_time2019 <-  lubridate::ymd("2019:12:31")
 
 # year 2020
 st_time2020 <-  lubridate::ymd("2020:01:01") 
-en_time2020 <-  lubridate::ymd("2020:07:31")
+en_time2020 <-  lubridate::ymd("2020:12:31")
 
 # year 2021
 st_time2021 <-  lubridate::ymd("2021:01:01") 
@@ -252,13 +262,13 @@ en_time2021 <-  lubridate::ymd("2021:07:31")
 st_jan2020 <-  lubridate::ymd("2020:01:01") 
 en_jan2020 <-  lubridate::ymd("2020:01:31")
 
-st_jul2020 <-  lubridate::ymd("2020:07:01") 
+st_jul2020 <-  lubridate::ymd("2020:06:25") 
 en_jul2020 <-  lubridate::ymd("2020:07:31")
 
 st_jan2021 <-  lubridate::ymd("2021:01:01") 
 en_jan2021 <-  lubridate::ymd("2021:01:31")
 
-st_jul2021 <-  lubridate::ymd("2021:07:01") 
+st_jul2021 <-  lubridate::ymd("2021:06:25") 
 en_jul2021 <-  lubridate::ymd("2021:07:31")
 ```
 
@@ -273,6 +283,8 @@ file_path <- paste(getwd(),"/mcera5", sep = "")
 Build requests:
 
 ```{r}
+req2019 <- build_era5_request(xmin = xmn, xmax = xmx, ymin = ymn, ymax = ymx, start_time = st_time2019, end_time = en_time2019, outfile_name = file_prefix)
+
 req2020 <- build_era5_request(xmin = xmn, xmax = xmx, ymin = ymn, ymax = ymx, start_time = st_time2020, end_time = en_time2020, outfile_name = file_prefix)
 
 req2021 <- build_era5_request(xmin = xmn, xmax = xmx, ymin = ymn, ymax = ymx, start_time = st_time2021, end_time = en_time2021, outfile_name = file_prefix)
@@ -281,6 +293,8 @@ req2021 <- build_era5_request(xmin = xmn, xmax = xmx, ymin = ymn, ymax = ymx, st
 Submit requests:
 
 ```{r}
+request_era5(request = req2019, uid = uid, out_path = file_path, overwrite = TRUE) #this can take some time
+
 request_era5(request = req2020, uid = uid, out_path = file_path, overwrite = TRUE) #this can take some time
 
 request_era5(request = req2021, uid = uid, out_path = file_path, overwrite = TRUE) #this can take some time
@@ -289,6 +303,7 @@ request_era5(request = req2021, uid = uid, out_path = file_path, overwrite = TRU
 Extract temperature data:
 
 ```{r}
+my_nc2019 <- paste0(file_path, "/mcera5_2019.nc")
 my_nc2020 <- paste0(file_path, "/mcera5_2020.nc")
 my_nc2021 <- paste0(file_path, "/mcera5_2021.nc")
 
@@ -309,6 +324,13 @@ arville.cold <- extract_clim(nc = my_nc2021, long =  x[1],  lat   =  y[1], start
 
 arville.cold$site <- "Arville"
 
+arville.extra <- extract_clim(nc = my_nc2020, long =  x[1],  lat   =  y[1], start_time = lubridate::ymd('2020:12:26'),  end_time = lubridate::ymd('2020:12:31')) #some extra days for the rolling mean
+
+arville.extra$site <- "Arville"
+
+arville.cold <- rbind(arville.cold, arville.extra) #add the extra days
+
+rm(arville.extra)
 
 # Hochwald
    # Warmest month: July 2020
@@ -322,10 +344,17 @@ hochwald.cold <- extract_clim(nc = my_nc2021, long =  x[2],  lat   =  y[2], star
 
 hochwald.cold$site <- "Hochwald"
 
+hochwald.extra <- extract_clim(nc = my_nc2020, long =  x[2],  lat   =  y[2], start_time = lubridate::ymd('2020:12:26'),  end_time = lubridate::ymd('2020:12:31')) #some extra days for the rolling mean
+
+hochwald.extra$site <- "Hochwald"
+
+hochwald.cold <- rbind(hochwald.cold, hochwald.extra) #add the extra days
+
+rm(hochwald.extra)
 
 # Vivarp
-   # Warmest month (air): 2021
-   # Coldest month (air): 2021
+   # Warmest month (air): July 2021
+   # Coldest month (air): January 2021
 
 vivarp.warm <- extract_clim(nc = my_nc2021, long =  x[3],  lat   =  y[3], start_time = st_jul2021,  end_time = en_jul2021)
 
@@ -334,6 +363,14 @@ vivarp.warm$site <- "Vivarp"
 vivarp.cold <- extract_clim(nc = my_nc2021, long =  x[3],  lat   =  y[3], start_time = st_jan2021,  end_time = en_jan2021)
 
 vivarp.cold$site <- "Vivarp"
+
+vivarp.extra <- extract_clim(nc = my_nc2020, long =  x[3],  lat   =  y[3], start_time = lubridate::ymd('2020:12:26'),  end_time = lubridate::ymd('2020:12:31')) #some extra days for the rolling mean
+
+vivarp.extra$site <- "Vivarp"
+
+vivarp.cold <- rbind(vivarp.cold, vivarp.extra) #add the extra days
+
+rm(vivarp.extra)
 
 
 # Siljan
@@ -348,6 +385,14 @@ siljan.cold <- extract_clim(nc = my_nc2021, long =  x[4],  lat   =  y[4], start_
 
 siljan.cold$site <- "Siljan"
 
+siljan.extra <- extract_clim(nc = my_nc2020, long =  x[4],  lat   =  y[4], start_time = lubridate::ymd('2020:12:26'),  end_time = lubridate::ymd('2020:12:31')) #some extra days for the rolling mean
+
+siljan.extra$site <- "Vivarp"
+
+siljan.cold <- rbind(siljan.cold, siljan.extra) #add the extra days
+
+rm(siljan.extra)
+
 
 # Sandsjö
    # Warmest month: July 2020
@@ -360,6 +405,14 @@ sandsjo.warm$site <- "Sandsjo"
 sandsjo.cold <- extract_clim(nc = my_nc2020, long =  x[5],  lat   =  y[5], start_time = st_jan2020,  end_time = en_jan2020)
 
 sandsjo.cold$site <- "Sandsjo"
+
+sandsjo.extra <- extract_clim(nc = my_nc2019, long =  x[5],  lat   =  y[5], start_time = lubridate::ymd('2019:12:26'),  end_time = lubridate::ymd('2019:12:31')) #some extra days for the rolling mean
+
+sandsjo.extra$site <- "Vivarp"
+
+sandsjo.cold <- rbind(sandsjo.cold, sandsjo.extra) #add the extra days
+
+rm(sandsjo.extra)
 
 
 # Merge everything:
@@ -397,9 +450,14 @@ arville.cold.prec <-  extract_precip(nc = my_nc2021, long = x[1], lat = y[1], st
 
 arville.cold.prec <- data.frame(mcera5_prec = arville.cold.prec, Date = seq(as.Date(st_jan2021), as.Date(en_jan2021), "days"), site = "Arville")
 
-arville.prec <- rbind(arville.warm.prec, arville.cold.prec)
+arville.extra <- extract_precip(nc = my_nc2020, long =  x[1],  lat   =  y[1], start_time = lubridate::ymd('2020:12:26'),  end_time = lubridate::ymd('2020:12:31'), convert_daily = TRUE) #some extra days for the rolling mean
+
+arville.extra <- data.frame(mcera5_prec = arville.extra, Date = seq(as.Date(lubridate::ymd('2020:12:26')), as.Date(lubridate::ymd('2020:12:31')), "days"), site = "Arville")
+
+arville.prec <- rbind(arville.warm.prec, arville.cold.prec, arville.extra)
 rm(arville.warm.prec)
 rm(arville.cold.prec)
+rm(arville.extra)
 
 # Hochwald
 hochwald.warm.prec <-  extract_precip(nc = my_nc2020, long = x[2], lat = y[2], start_time = st_jul2020, end_time = en_jul2020, convert_daily = TRUE)
@@ -410,9 +468,14 @@ hochwald.cold.prec <-  extract_precip(nc = my_nc2021, long = x[2], lat = y[2], s
 
 hochwald.cold.prec <- data.frame(mcera5_prec = hochwald.cold.prec, Date = seq(as.Date(st_jan2021), as.Date(en_jan2021), "days"), site = "Hochwald")
 
-hochwald.prec <- rbind(hochwald.warm.prec, hochwald.cold.prec)
+hochwald.extra <- extract_precip(nc = my_nc2020, long =  x[2],  lat   =  y[2], start_time = lubridate::ymd('2020:12:26'),  end_time = lubridate::ymd('2020:12:31'), convert_daily = TRUE) #some extra days for the rolling mean
+
+hochwald.extra <- data.frame(mcera5_prec = hochwald.extra, Date = seq(as.Date(lubridate::ymd('2020:12:26')), as.Date(lubridate::ymd('2020:12:31')), "days"), site = "Hochwald")
+
+hochwald.prec <- rbind(hochwald.warm.prec, hochwald.cold.prec, hochwald.extra)
 rm(hochwald.warm.prec)
 rm(hochwald.cold.prec)
+rm(hochwald.extra)
 
 # Vivarp
 vivarp.warm.prec <-  extract_precip(nc = my_nc2021, long = x[3], lat = y[3], start_time = st_jul2021, end_time = en_jul2021, convert_daily = TRUE)
@@ -423,9 +486,14 @@ vivarp.cold.prec <-  extract_precip(nc = my_nc2021, long = x[3], lat = y[3], sta
 
 vivarp.cold.prec <- data.frame(mcera5_prec = vivarp.cold.prec, Date = seq(as.Date(st_jan2021), as.Date(en_jan2021), "days"), site = "Vivarp")
 
-vivarp.prec <- rbind(vivarp.warm.prec, vivarp.cold.prec)
+vivarp.extra <- extract_precip(nc = my_nc2020, long =  x[3],  lat   =  y[3], start_time = lubridate::ymd('2020:12:26'),  end_time = lubridate::ymd('2020:12:31'), convert_daily = TRUE) #some extra days for the rolling mean
+
+vivarp.extra <- data.frame(mcera5_prec = vivarp.extra, Date = seq(as.Date(lubridate::ymd('2020:12:26')), as.Date(lubridate::ymd('2020:12:31')), "days"), site = "Vivarp")
+
+vivarp.prec <- rbind(vivarp.warm.prec, vivarp.cold.prec, vivarp.extra)
 rm(vivarp.warm.prec)
 rm(vivarp.cold.prec)
+rm(vivarp.extra)
 
 # Siljan
 siljan.warm.prec <-  extract_precip(nc = my_nc2020, long = x[4], lat = y[4], start_time = st_jul2020, end_time = en_jul2020, convert_daily = TRUE)
@@ -436,9 +504,14 @@ siljan.cold.prec <-  extract_precip(nc = my_nc2021, long = x[4], lat = y[4], sta
 
 siljan.cold.prec <- data.frame(mcera5_prec = siljan.cold.prec, Date = seq(as.Date(st_jan2021), as.Date(en_jan2021), "days"), site = "Siljan")
 
-siljan.prec <- rbind(siljan.warm.prec, siljan.cold.prec)
+siljan.extra <- extract_precip(nc = my_nc2020, long =  x[4],  lat   =  y[4], start_time = lubridate::ymd('2020:12:26'),  end_time = lubridate::ymd('2020:12:31'), convert_daily = TRUE) #some extra days for the rolling mean
+
+siljan.extra <- data.frame(mcera5_prec = siljan.extra, Date = seq(as.Date(lubridate::ymd('2020:12:26')), as.Date(lubridate::ymd('2020:12:31')), "days"), site = "Siljan")
+
+siljan.prec <- rbind(siljan.warm.prec, siljan.cold.prec, siljan.extra)
 rm(siljan.warm.prec)
 rm(siljan.cold.prec)
+rm(siljan.extra)
 
 # Sandsjö
 
@@ -450,12 +523,18 @@ sandsjo.cold.prec <-  extract_precip(nc = my_nc2020, long = x[5], lat = y[5], st
 
 sandsjo.cold.prec <- data.frame(mcera5_prec = sandsjo.cold.prec, Date = seq(as.Date(st_jan2020), as.Date(en_jan2020), "days"), site = "Sandsjo")
 
-sandsjo.prec <- rbind(sandsjo.warm.prec, sandsjo.cold.prec)
+sandsjo.extra <- extract_precip(nc = my_nc2019, long =  x[5],  lat   =  y[5], start_time = lubridate::ymd('2019:12:26'),  end_time = lubridate::ymd('2019:12:31'), convert_daily = TRUE) #some extra days for the rolling mean
+
+sandsjo.extra <- data.frame(mcera5_prec = sandsjo.extra, Date = seq(as.Date(lubridate::ymd('2019:12:26')), as.Date(lubridate::ymd('2019:12:31')), "days"), site = "Sandsjo")
+
+
+sandsjo.prec <- rbind(sandsjo.warm.prec, sandsjo.cold.prec, sandsjo.extra)
 rm(sandsjo.warm.prec)
 rm(sandsjo.cold.prec)
+rm(sandsjo.extra)
 ```
 
-Merge precipitation data aross al sites:
+Merge precipitation data across al sites:
 
 ```{r}
 mcera5_prec <- rbind(arville.prec, hochwald.prec, vivarp.prec, siljan.prec, sandsjo.prec)
@@ -655,7 +734,7 @@ vivarp.station <- dplyr::rename(vivarp.station,
 
 vivarp.station$site <- "Vivarp"
 
-vivarp.dates <- c(seq(as.Date("2019-12-25"),as.Date("2020-01-31"), by = 'day'), seq(as.Date("2021-06-25"),as.Date("2021-07-31"), by = 'day'))
+vivarp.dates <- c(seq(as.Date("2020-12-25"),as.Date("2021-01-31"), by = 'day'), seq(as.Date("2021-06-25"),as.Date("2021-07-31"), by = 'day'))
 
 vivarp.station$date <- as.Date(vivarp.station$date)
 
@@ -713,7 +792,7 @@ sandsjo.station <- rename(sandsjo.station,
 
 sandsjo.station$site <- "Sandsjo"
 
-sandsjo.dates <- seq(as.Date("2020-06-25"),as.Date("2021-01-31"), by = 'day')
+sandsjo.dates <- c(seq(as.Date("2019-12-26"),as.Date("2020-01-31"), by = 'day'), seq(as.Date("2020-06-25"),as.Date("2020-07-31"), by = 'day'))
 
 sandsjo.station$date <- as.Date(sandsjo.station$date)
 

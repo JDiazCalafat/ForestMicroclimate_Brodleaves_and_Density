@@ -9,7 +9,7 @@ library(reshape)
 library(ggpubr)
 ```
 
-First, we need to load ERA5 data and logger data:
+First, we need to load all data:
 
 ```{r}
 logger.temp <- read.csv("./DATASETS/logger_temp.csv", header = TRUE)
@@ -84,7 +84,7 @@ temp$air_maxoff_ws <- temp$Temp.max - temp$station_maxair
 temp[which(temp$location == "s"),]$air_maxoff_ws <- NA # remove maximum values for soil temperature, as offsets are calculated with minimum air
 ```
 
-Compare offsets:
+Compare ait temperature offsets:
 
 ```{r}
 offsetplot <- temp[which(temp$location == "a"),]
@@ -107,9 +107,6 @@ melt.jan$tempclass <- ifelse(grepl("max", melt.jan$variable, fixed = TRUE), "max
 
 melt.jan$sourceclass <- ifelse(grepl("_mcera5", melt.jan$variable, fixed = TRUE), "mcera5", ifelse(grepl("_ERA5", melt.jan$variable, fixed = TRUE), "ERA5", ifelse(grepl("_ws", melt.jan$variable, fixed = TRUE), "WS", "error")))
 
-levels(as.factor(melt.jan$tempclass))
-levels(as.factor(melt.jan$sourceclass))
-
 melt.jul <- melt(offsetplot.jul)
 rm(offsetplot.jul)
 
@@ -117,22 +114,19 @@ melt.jul$tempclass <- ifelse(grepl("max", melt.jul$variable, fixed = TRUE), "max
 
 melt.jul$sourceclass <- ifelse(grepl("_mcera5", melt.jul$variable, fixed = TRUE), "mcera5", ifelse(grepl("_ERA5", melt.jul$variable, fixed = TRUE), "ERA5", ifelse(grepl("_ws", melt.jul$variable, fixed = TRUE), "WS", "error")))
 
-levels(as.factor(melt.jul$tempclass))
-levels(as.factor(melt.jul$sourceclass))
-
 
 # coldest month:
 
 coldoffsetplot <-
   ggplot(melt.jan) +
   aes(x = value, y = variable, fill = sourceclass) +
-  geom_boxplot() +
+  geom_violin() +
       geom_vline(xintercept=c(-0,0), linetype="dotted", col = "red", lwd = 1) +
   scale_fill_manual(
-    values = c(ERA5 = "#f4d35e",
-    mcera5 = "#faf0ca",
-    WS = "#0d3b66"),
-    name = "Data source",
+    values = c(ERA5 = "#e09f3e",
+    mcera5 = "#9e2a2b",
+    WS = "#335c67"),
+    name = "Data source:",
     breaks = c("ERA5", "mcera5", "WS"),
     labels = c("ERA5 raw", "ERA5 adjusted [mcera5]", "Weather station")) +
   theme_minimal() + 
@@ -150,24 +144,26 @@ coldoffsetplot <-
         plot.title = element_text(size = 22L,
                                   face = "bold",
                                   hjust = 0.5),
-        strip.text.y = element_text(size = 18)) +
-  guides(fill = guide_legend(reverse=TRUE))
-
-
-
+        strip.text.y = element_text(size = 18),
+        axis.text.x = element_text(size = 14),
+        axis.title.x = element_text(size = 18),
+        legend.title = element_text(size=18),
+        legend.text = element_text(size=15)) +
+  guides(fill = guide_legend(reverse=TRUE)) +
+  geom_boxplot(width=0.1, fill = "white")
 
 # warmest month:
 
 warmoffsetplot <-
   ggplot(melt.jul) +
   aes(x = value, y = variable, fill = sourceclass) +
-  geom_boxplot() +
+  geom_violin() +
       geom_vline(xintercept=c(-0,0), linetype="dotted", col = "red", lwd = 1) +
   scale_fill_manual(
-    values = c(ERA5 = "#f4d35e",
-    mcera5 = "#faf0ca",
-    WS = "#0d3b66"),
-    name = "Data source",
+    values = c(ERA5 = "#e09f3e",
+    mcera5 = "#9e2a2b",
+    WS = "#335c67"),
+    name = "Data source:",
     breaks = c("ERA5", "mcera5", "WS"),
     labels = c("ERA5 raw", "ERA5 adjusted [mcera5]", "Weather station")) +
   theme_minimal() + 
@@ -185,16 +181,74 @@ warmoffsetplot <-
         plot.title = element_text(size = 22L,
                                   face = "bold",
                                   hjust = 0.5),
-        strip.text.y = element_text(size = 18)) +
-  guides(fill = guide_legend(reverse=TRUE))
+        strip.text.y = element_text(size = 18),
+        axis.text.x = element_text(size = 14),
+        axis.title.x = element_text(size = 18),
+        legend.title = element_text(size=18),
+        legend.text = element_text(size=15)) +
+  guides(fill = guide_legend(reverse=TRUE)) +
+  geom_boxplot(width=0.1, fill = "white")
 
-ggarrange(coldoffsetplot, warmoffsetplot, common.legend = TRUE, legend = "right")
 
-rm(coldoffsetplot)
-rm(warmoffsetplot)
-rm(melt.jan)
-rm(melt.jul)
+ggarrange(coldoffsetplot, warmoffsetplot, common.legend = TRUE, legend = "bottom")
+
+#rm(coldoffsetplot)
+#rm(warmoffsetplot)
+#rm(melt.jan)
+#rm(melt.jul)
 ```
+
+Are any statistically significant differences across the offsets that are calculated with different macroclimatic sources?
+
+```{r}
+# coldest month
+
+jan.meanoff <- melt.jan[which(melt.jan$tempclass == "mean"),]
+
+ks.test(jan.meanoff$value, pnorm)
+
+kruskal.test(value~sourceclass, data = jan.meanoff)
+library(FSA)
+dunnTest(value~sourceclass, data = jan.meanoff)
+
+
+jan.minoff <- melt.jan[which(melt.jan$tempclass == "min"),]
+
+ks.test(jan.minoff$value, pnorm)
+
+kruskal.test(value~sourceclass, data = jan.minoff)
+dunnTest(value~sourceclass, data = jan.minoff)
+
+jan.maxoff <- melt.jan[which(melt.jan$tempclass == "max"),]
+ks.test(jan.maxoff$value, pnorm)
+
+kruskal.test(value~sourceclass, data = jan.maxoff)
+dunnTest(value~sourceclass, data = jan.maxoff)
+
+# warmest month
+
+jul.meanoff <- melt.jul[which(melt.jul$tempclass == "mean"),]
+
+ks.test(jul.meanoff$value, pnorm)
+
+kruskal.test(value~sourceclass, data = jul.meanoff)
+dunnTest(value~sourceclass, data = jul.meanoff)
+
+
+jul.minoff <- melt.jul[which(melt.jul$tempclass == "min"),]
+
+ks.test(jul.minoff$value, pnorm)
+
+kruskal.test(value~sourceclass, data = jul.minoff)
+dunnTest(value~sourceclass, data = jul.minoff)
+
+jul.maxoff <- melt.jul[which(melt.jul$tempclass == "max"),]
+ks.test(jul.maxoff$value, pnorm)
+
+kruskal.test(value~sourceclass, data = jul.maxoff)
+dunnTest(value~sourceclass, data = jul.maxoff)
+```
+
 
 # Merge with tree data
 

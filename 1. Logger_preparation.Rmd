@@ -73,8 +73,8 @@ df.list <- lapply(file.list, read.csv)
 rm(file.list)
 vivarp.temp <- do.call(rbind, df.list)
 
-vivarp.temp <- dplyr::rename(vivarp.temp, 
-                      "Plot" = "ï..Plot")
+# vivarp.temp <- dplyr::rename(vivarp.temp, 
+#                       "Plot" = "ï..Plot")
 
 vivarp.temp <- na.omit(vivarp.temp)
 
@@ -589,7 +589,7 @@ rm(missing.sandsjo.37a.jul)
 rm(tofill.sandsjo.37a.jul)
 rm(filled.sandsjo.37a.jul)
 
-sandsjo.temp <- rbind(sandsjo.temp.a.jan, sandsjo.temp.a.jul)
+sandsjo.temp <- rbind(sandsjo.temp.a.jan, sandsjo.temp.a.jul, sandsjo.temp.s.jan, sandsjo.temp.s.jul)
 
 rm(sandsjo.temp.a.jan)
 rm(sandsjo.temp.a.jul)
@@ -608,6 +608,7 @@ rm(sandsjo.completeness.s.jul)
 rm(sandsjo.temp.a)
 rm(sandsjo.temp.s)
 ```
+
 Merge and export as .csv for script 2.5
 
 ```{r}
@@ -620,18 +621,18 @@ rm(extract)
 
 # Daily temperature variable calculation
 
-Calculate mean values per day and logger before merging:
+Calculate mean and sd values per day and logger before merging:
 
 ```{r}
-arville.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = arville.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x))))
+arville.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = arville.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x), sd = sd(x))))
 
-hochwald.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = hochwald.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x))))
+hochwald.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = hochwald.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x), sd = sd(x))))
 
-vivarp.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = vivarp.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x))))
+vivarp.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = vivarp.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x), sd = sd(x))))
 
-siljan.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = siljan.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x))))
+siljan.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = siljan.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x), sd = sd(x))))
 
-sandsjo.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = sandsjo.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x))))
+sandsjo.temp <- do.call(data.frame, aggregate(Temp ~  Date + Plot + location + site, data = sandsjo.temp, FUN = function(x) c(mean = mean(x), min = min(x), max = max(x), sd = sd(x))))
 ```
 
 Export the dataset:

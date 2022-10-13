@@ -3,6 +3,7 @@ Load packages:
 ```{r}
 library(readxl)
 library(dplyr)
+library(ggplot2)
 ```
 
 
@@ -144,24 +145,24 @@ Basal_Area_13m = (sum((pi*(DBH[real.dist <= 13]/20)^2)/10000)/(pi*13^2))*10000,
 Basal_Area_12m = (sum((pi*(DBH[real.dist <= 12]/20)^2)/10000)/(pi*12^2))*10000,
 Basal_Area_11m = (sum((pi*(DBH[real.dist <= 11]/20)^2)/10000)/(pi*11^2))*10000,
 Basal_Area_10m = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(pi*10^2))*10000,
-Basal_Area_9m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
-Basal_Area_8m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
-Basal_Area_7m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
-Basal_Area_6m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
-Basal_Area_5m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
-Basal_Area_4m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
+Basal_Area_09m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
+Basal_Area_08m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
+Basal_Area_07m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
+Basal_Area_06m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
+Basal_Area_05m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
+Basal_Area_04m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
 
 tree.data.plot.notarville <- tree.data %>%
   filter(!(Site %in% "Arville")) %>%
   group_by(Site, Plot) %>%
   summarise(
 Basal_Area_10m = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(pi*10^2))*10000,
-Basal_Area_9m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
-Basal_Area_8m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
-Basal_Area_7m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
-Basal_Area_6m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
-Basal_Area_5m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
-Basal_Area_4m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
+Basal_Area_09m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
+Basal_Area_08m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
+Basal_Area_07m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
+Basal_Area_06m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
+Basal_Area_05m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
+Basal_Area_04m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
 
 # As we did not measure trees between 10 and 20 m radi for places other than Arville, we will copy the BA value at 10 m radi to all other radi for these places. This way, when using the "Basal_Area_20m" variable we will be using all our available data (i.e BA calculated at 20 m in Arville and at 10 in all the other sites)
 
@@ -233,12 +234,12 @@ Broad_BA_13m = (sum((pi*(DBH[real.dist <= 13]/20)^2)/10000)/(pi*13^2))*10000,
 Broad_BA_12m = (sum((pi*(DBH[real.dist <= 12]/20)^2)/10000)/(pi*12^2))*10000,
 Broad_BA_11m = (sum((pi*(DBH[real.dist <= 11]/20)^2)/10000)/(pi*11^2))*10000,
 Broad_BA_10m = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(pi*10^2))*10000,
-Broad_BA_9m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
-Broad_BA_8m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
-Broad_BA_7m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
-Broad_BA_6m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
-Broad_BA_5m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
-Broad_BA_4m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
+Broad_BA_09m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
+Broad_BA_08m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
+Broad_BA_07m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
+Broad_BA_06m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
+Broad_BA_05m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
+Broad_BA_04m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
 
 
 
@@ -247,12 +248,12 @@ tree.data.plot3 <- broad.leaved %>%
   group_by(Site, Plot) %>%
   summarise(
 Broad_BA_10m = (sum((pi*(DBH[real.dist <= 10]/20)^2)/10000)/(pi*10^2))*10000,
-Broad_BA_9m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
-Broad_BA_8m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
-Broad_BA_7m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
-Broad_BA_6m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
-Broad_BA_5m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
-Broad_BA_4m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
+Broad_BA_09m = (sum((pi*(DBH[real.dist <= 9]/20)^2)/10000)/(pi*9^2))*10000,
+Broad_BA_08m = (sum((pi*(DBH[real.dist <= 8]/20)^2)/10000)/(pi*8^2))*10000,
+Broad_BA_07m = (sum((pi*(DBH[real.dist <= 7]/20)^2)/10000)/(pi*7^2))*10000,
+Broad_BA_06m = (sum((pi*(DBH[real.dist <= 6]/20)^2)/10000)/(pi*6^2))*10000,
+Broad_BA_05m = (sum((pi*(DBH[real.dist <= 5]/20)^2)/10000)/(pi*5^2))*10000,
+Broad_BA_04m = (sum((pi*(DBH[real.dist <= 4]/20)^2)/10000)/(pi*4^2))*10000)
 
 # Fill in 10-20 m radi for sites other than Arville with 10m radius data
 
@@ -277,9 +278,9 @@ tree.data.plot3$Broad_BA_12m <- tree.data.plot3$Broad_BA_10m
 tree.data.plot3$Broad_BA_11m <- tree.data.plot3$Broad_BA_10m
 
 
-broad.ba2 <- tree.data.plot2[,which(names(tree.data.plot2) %in% c("Site", "Plot", "Broad_BA_20m", "Broad_BA_19m", "Broad_BA_18m", "Broad_BA_17m", "Broad_BA_16m", "Broad_BA_15m", "Broad_BA_14m", "Broad_BA_13m", "Broad_BA_12m", "Broad_BA_11m", "Broad_BA_10m", "Broad_BA_9m", "Broad_BA_8m", "Broad_BA_7m", "Broad_BA_6m", "Broad_BA_5m", "Broad_BA_4m"))]
+broad.ba2 <- tree.data.plot2[,which(names(tree.data.plot2) %in% c("Site", "Plot", "Broad_BA_20m", "Broad_BA_19m", "Broad_BA_18m", "Broad_BA_17m", "Broad_BA_16m", "Broad_BA_15m", "Broad_BA_14m", "Broad_BA_13m", "Broad_BA_12m", "Broad_BA_11m", "Broad_BA_10m", "Broad_BA_09m", "Broad_BA_08m", "Broad_BA_07m", "Broad_BA_06m", "Broad_BA_05m", "Broad_BA_04m"))]
 
-broad.ba3 <- tree.data.plot3[,which(names(tree.data.plot3) %in% c("Site", "Plot", "Broad_BA_20m", "Broad_BA_19m", "Broad_BA_18m", "Broad_BA_17m", "Broad_BA_16m", "Broad_BA_15m", "Broad_BA_14m", "Broad_BA_13m", "Broad_BA_12m", "Broad_BA_11m", "Broad_BA_10m", "Broad_BA_9m", "Broad_BA_8m", "Broad_BA_7m", "Broad_BA_6m", "Broad_BA_5m", "Broad_BA_4m"))]
+broad.ba3 <- tree.data.plot3[,which(names(tree.data.plot3) %in% c("Site", "Plot", "Broad_BA_20m", "Broad_BA_19m", "Broad_BA_18m", "Broad_BA_17m", "Broad_BA_16m", "Broad_BA_15m", "Broad_BA_14m", "Broad_BA_13m", "Broad_BA_12m", "Broad_BA_11m", "Broad_BA_10m", "Broad_BA_09m", "Broad_BA_08m", "Broad_BA_07m", "Broad_BA_06m", "Broad_BA_05m", "Broad_BA_04m"))]
 
 broad.ba <- rbind(broad.ba2, broad.ba3)
 
@@ -309,12 +310,12 @@ tree.data.plot$perc_broad_13m <- tree.data.plot$Broad_BA_13m/tree.data.plot$Basa
 tree.data.plot$perc_broad_12m <- tree.data.plot$Broad_BA_12m/tree.data.plot$Basal_Area_12m*100
 tree.data.plot$perc_broad_11m <- tree.data.plot$Broad_BA_11m/tree.data.plot$Basal_Area_11m*100
 tree.data.plot$perc_broad_10m <- tree.data.plot$Broad_BA_10m/tree.data.plot$Basal_Area_10m*100
-tree.data.plot$perc_broad_9m <- tree.data.plot$Broad_BA_9m/tree.data.plot$Basal_Area_9m*100
-tree.data.plot$perc_broad_8m <- tree.data.plot$Broad_BA_8m/tree.data.plot$Basal_Area_8m*100
-tree.data.plot$perc_broad_7m <- tree.data.plot$Broad_BA_7m/tree.data.plot$Basal_Area_7m*100
-tree.data.plot$perc_broad_6m <- tree.data.plot$Broad_BA_6m/tree.data.plot$Basal_Area_6m*100
-tree.data.plot$perc_broad_5m <- tree.data.plot$Broad_BA_5m/tree.data.plot$Basal_Area_5m*100
-tree.data.plot$perc_broad_4m <- tree.data.plot$Broad_BA_4m/tree.data.plot$Basal_Area_4m*100
+tree.data.plot$perc_broad_09m <- tree.data.plot$Broad_BA_09m/tree.data.plot$Basal_Area_09m*100
+tree.data.plot$perc_broad_08m <- tree.data.plot$Broad_BA_08m/tree.data.plot$Basal_Area_08m*100
+tree.data.plot$perc_broad_07m <- tree.data.plot$Broad_BA_07m/tree.data.plot$Basal_Area_07m*100
+tree.data.plot$perc_broad_06m <- tree.data.plot$Broad_BA_06m/tree.data.plot$Basal_Area_06m*100
+tree.data.plot$perc_broad_05m <- tree.data.plot$Broad_BA_05m/tree.data.plot$Basal_Area_05m*100
+tree.data.plot$perc_broad_04m <- tree.data.plot$Broad_BA_04m/tree.data.plot$Basal_Area_04m*100
 
 #NaNs appear when dividing by 0, which happens in places with no trees (basal area = 0). Therefore, we can just replace NaNs by 0. In R, is.nan() does not work for dataset, so we will create a small function to address this.
 
@@ -413,21 +414,27 @@ write.csv(tree.data.plot, file = "./DATASETS/tree_data.csv", row.names = FALSE, 
 # Figure
 
 ```{r}
-library(ggplot2)
+tree.data.plot$site_label <- ifelse(tree.data.plot$site == "Arville", "B (49° N)", ifelse(tree.data.plot$site == "Hochwald", "G (50° N)", ifelse(tree.data.plot$site == "Vivarp", "SS (56° N)", ifelse(tree.data.plot$site == "Siljan", "MS (60° N)", "NS (64° N)"))))
 
 tree.data.plot %>%
 # filter(!(site %in% "Arville")) %>%
  ggplot() +
  aes(x = Basal_Area_20m,
-     y = perc_broad_20m, colour = site) +
- geom_point(aes(shape = site), 
+     y = perc_broad_20m, colour = site_label) +
+ geom_point(aes(shape = site_label), 
  size = 2.5) +
-  scale_shape_manual(values=c(15, 16, 17, 18, 20)) +
-  scale_color_manual(values=c("#FFE74C", "#FF5964", "#92B4A7", "#38618C", "#35A7FF")) +
- labs(x = "Forest density (Basal Area)", y = "Broadleaved component (%)") +
+  scale_shape_manual(name = "Site",
+                     values=c(15, 16, 17, 18, 20),
+                     limits=c("NS (64° N)", "MS (60° N)", "SS (56° N)", "G (50° N)", "B (49° N)")) +
+  scale_color_manual(name = "Site",
+                     values=c("#E09F3E", "#89BDB9", "#335C67", "#65875A", "#9E2A2B"),
+                     limits=c("NS (64° N)", "MS (60° N)", "SS (56° N)", "G (50° N)", "B (49° N)")) +
+ labs(x = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), y = "Broadleaves (%)", fill = "Site") +
  theme_minimal() +
- theme(axis.title.y = element_text(size = 16L), axis.title.x = element_text(size = 16L))
-
-rm(list = ls())
+ theme(axis.title.y = element_text(size = 16L), axis.title.x = element_text(size = 16L),
+       legend.title = element_blank(),
+       legend.text = element_text(size = 10),
+       legend.position = "top")
+#rm(list = ls())
 ```
 
