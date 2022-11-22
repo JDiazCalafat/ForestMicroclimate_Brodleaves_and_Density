@@ -53,12 +53,13 @@ tree.temp.s.jul <- tree.temp.s[which(tree.temp.s$month == 7),]
 tree.temp.s.jan <- tree.temp.s[which(tree.temp.s$month == 1),]
 ```
 
+# Models with ERA5 offsets
 
-# Models with ERA5:
+Models will be run with air temperature offsets calculated from weather station data, as well as those calculated from ERA5 data and distance weighing through the 'mcera5' R package.
 
-Models will be run with air temperature offsets calculated from weather station data, as well as those calculated from ERA5 data and distance weighing 
+LMMs and GAMMs will be run separately. Then, different smoother configurations will be tested for the GAMMs.
 
-## Soil models:
+## Soil ERA5 models:
 
 ### Only linear, with and without interaction:
 
@@ -120,7 +121,7 @@ GAMM_r2aic <- function(model){
   rsq <- round(summary(model$gam)$r.sq,2)
   aic <- round(AIC(model$mer),2)
   forest.density <- if(grepl("CanOpen", formula) == TRUE){
-    "Canopy openness"} else {"Basal area"}
+    "Canopy openness"} else {expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")"))}
   broadleaves.radio <- str_sub(formula, start = str_locate(formula, "perc_broad_")[2]+1, end = str_locate(formula, "perc_broad_")[2]+3)
   basalarea.radio <- str_sub(formula, start = str_locate(formula, "Basal_Area_")[2]+1, end = str_locate(formula, "Basal_Area_")[2]+3)
   
@@ -148,8 +149,7 @@ output2$location <- "Soil" #add temp origin
 output2$resp.var <- "mean temp" #add response variable
 ```
 
-
-### With different smoother term configurations:
+### Different smoother configurations
 
 ```{r}
 tree.temp.s.jul$site <- as.factor(tree.temp.s.jul$site)
@@ -338,9 +338,9 @@ Nothing to worry about. Snow and previous averaged temperature are somewhat high
 
 Now the models: we will add previous averaged temperature and snow covariates.
 
-#### Model with covariates for the soil temperature offset in the coldest month:
+#### Coldest month
 
-We will add Day within a single smoother to account for temporal autocorrelation.
+We will add date (= *autocorr*) within a single smoother to account for temporal autocorrelation.
 
 ```{r}
 # canopy openness
@@ -363,12 +363,12 @@ colfunc <- colorRampPalette(c("#579dc8", "#ffff73", "#fb2e0e")) # create a color
 
 # plot: canopy openness
 
-plot(model.soil.jan.co.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+plot(model.soil.jan.co.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # plot: basal area
-plot(model.soil.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+plot(model.soil.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -381,7 +381,7 @@ output5$location <- "Soil" #add temp origin
 output5$resp.var <- "mean temp" #add response variable
 ```
 
-#### Model with covariates for the soil temperature offset in the warmest month
+#### Warmest month
 
 Same approach:
 
@@ -404,13 +404,13 @@ gam.check(model.soil.jul.ba.all$gam)
 
 # canopy openness
 
-plot(model.soil.jul.co.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+plot(model.soil.jul.co.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # basal area
 
-plot(model.soil.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+plot(model.soil.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Average soil temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -424,10 +424,10 @@ output6$month <- "Warmest month" #add month
 output6$location <- "Soil" #add temp origin
 output6$resp.var <- "mean temp" #add response variable
 ```
-The relationship between forest density and proportion of broadleaves seems pretty linear. In fact, when using unidimensional separate smoothers, AIC only grows by _ca._ 1 point.
 
+The relationship between forest density and proportion of broadleaves seems pretty linear. In fact, when using unidimensional separate smoothers, AIC only grows by *ca.* 1 point.
 
-## Air loggers:
+## Air ERA5 models:
 
 ### Only linear, with and without interaction:
 
@@ -693,10 +693,9 @@ corrplot(cor.a.jul, method = 'ellipse', order = 'AOE', type = 'upper', addCoef.c
 
 Nothing to worry about.
 
+#### Coldest month
 
-#### Coldest month (with covariates)
-
-* Minimum temperature offset:
+##### Minimum temperature offset:
 
 ```{r}
 # basal area
@@ -717,13 +716,13 @@ gam.check(model.minair.jan.co.all$gam)
 
 # Plot: basal area
 
-plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: canopy openness
 
-plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -737,7 +736,7 @@ output11$location <- "Air" #add temp origin
 output11$resp.var <- "min temp" #add response variable
 ```
 
-* Mean temperature offset:
+##### Mean temperature offset:
 
 ```{r}
 # basal area
@@ -758,13 +757,13 @@ gam.check(model.meanair.jan.co.all$gam)
 
 # Plot: basal area
 
-plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Mean air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Mean air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "B) Mean air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "B) Mean air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -778,7 +777,7 @@ output12$location <- "Air" #add temp origin
 output12$resp.var <- "mean temp" #add response variable
 ```
 
-* Max temperature offset:
+##### Max temperature offset:
 
 ```{r}
 # basal area
@@ -799,13 +798,13 @@ gam.check(model.maxair.jan.co.all$gam)
 
 # Plot: Basal area
 
-plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -818,9 +817,9 @@ output13$location <- "Air" #add temp origin
 output13$resp.var <- "max temp" #add response variable
 ```
 
-#### Warmest month (with covariates)
+#### Warmest month
 
-* Minimum temperature offset:
+##### Minimum temperature offset:
 
 ```{r}
 # basal area
@@ -841,13 +840,13 @@ gam.check(model.minair.jul.co.all$gam)
 
 #Plot: Basal area
 
-plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -860,7 +859,7 @@ output14$location <- "Air" #add temp origin
 output14$resp.var <- "min temp" #add response variable
 ```
 
-* Mean temperature offset
+##### Mean temperature offset
 
 ```{r}
 # basal area
@@ -880,13 +879,13 @@ gam.check(model.meanair.jul.co.all$gam)
 
 # Plot: Basal area
 
-plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -899,7 +898,7 @@ output15$location <- "Air" #add temp origin
 output15$resp.var <- "mean temp" #add response variable
 ```
 
-* Maximum temperature offset
+##### Maximum temperature offset
 
 ```{r}
 # basal area
@@ -919,11 +918,11 @@ gam.check(model.maxair.jul.co.all$gam)
 
 # Plot: Basal area
 
-plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Basal Area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 # Plot: Canopy Openness
 
-plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -936,105 +935,105 @@ output16$location <- "Air" #add temp origin
 output16$resp.var <- "max temp" #add response variable
 ```
 
-### Put together all the plots:
+## Put together all the plots:
 
-#### Soil
+### ERA5 Soil
 
 ```{r}
-# Basal area
-par(mfrow=c(1,2))
+# Canopy openness
+par(mfrow=c(3,2), mar=c(5.1,4.5,4.2,2.5))
 
-plot(model.soil.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Average soil temp ERA5 offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 2, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+plot(model.soil.jan.co.all$gam, scheme = 2, lwd = 3, main = "A) Mean soil temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+
+points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+plot(model.soil.jul.co.all$gam, scheme = 2, lwd = 3, main = "B) Mean soil temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+
+points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+
+# Basal area
+
+plot(model.soil.jan.ba.all$gam, scheme = 2, lwd = 3, main = "C) Mean soil temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.axis = 2, cex.main = 2.5, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
-plot(model.soil.jul.ba.all$gam, scheme = 2, lwd = 3, main = "B) Average soil temp ERA5 offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 2, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.soil.jul.ba.all$gam, scheme = 2, lwd = 3, main = "D) Mean soil temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+```
+
+### ERA5 Air
+
+```{r}
+# Basal area
+
+par(mfrow=c(3,2), mar = c(5.3,4.5,4.3,2.5))
+
+plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp ERA5 offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+
+plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp ERA5 offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+
+plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp ERA5 offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+
+plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp ERA5 offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+
+plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp ERA5 offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+
+plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp ERA5 offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Canopy openness
-par(mfrow=c(1,2))
 
-plot(model.soil.jan.co.all$gam, scheme = 2, lwd = 3, main = "A) Average soil temp ERA5 offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.5, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
+par(mfrow=c(3,2), mar = c(5.3,4.5,4.3,2.5))
 
-points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-plot(model.soil.jul.co.all$gam, scheme = 2, lwd = 3, main = "B) Average soil temp ERA5 offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 2, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select =1)
-
-points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-```
-
-#### Air
-
-```{r}
-# Basal area
-
-par(mfrow=c(3,2))
-
-plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp ERA5 offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-
-plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp ERA5 offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-
-plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp ERA5 offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-
-plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp ERA5 offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-
-plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp ERA5 offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-
-plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp ERA5 offset warmest month", xlab = "Basal Area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-# Canopy openness
-
-par(mfrow=c(3,2))
-
-plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp ERA5 offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp ERA5 offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp ERA5 offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp ERA5 offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp ERA5 offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp ERA5 offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp ERA5 offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp ERA5 offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp ERA5 offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp ERA5 offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
-plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp ERA5 offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp ERA5 offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 ```
 
-### Put together all model outputs and export a table:
+### Save ERA5 output table:
 
 ```{r}
 era5.results <- rbind(output1, output2, output3, output4, output5, output6, output7, output8, output9, output10, output11, output12, output13, output14, output15, output16)
@@ -1044,11 +1043,11 @@ rm(list = ls(pattern = "model"))
 rm(list = ls(pattern = "output"))
 ```
 
-# Repeat all models with mcera5 data:
+# Models with 'mcera5' offsets
 
 There are no soil models, as no macroclimatic soil data could be downloaded through the 'mcera5' R package.
 
-## Air loggers:
+## Air 'mcera5' loggers:
 
 ### Only linear, with and without interaction:
 
@@ -1311,10 +1310,9 @@ corrplot(cor.a.jul, method = 'ellipse', order = 'AOE', type = 'upper', addCoef.c
 
 Nothing to worry about.
 
+#### Coldest month
 
-#### Coldest month (with covariates)
-
-* Minimum temperature offset:
+##### Minimum temperature offset:
 
 ```{r}
 # basal area
@@ -1335,13 +1333,13 @@ gam.check(model.minair.jan.co.all$gam)
 
 # Plot: basal area
 
-plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: canopy openness
 
-plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -1355,7 +1353,7 @@ output5$location <- "Air" #add temp origin
 output5$resp.var <- "min temp" #add response variable
 ```
 
-* Mean temperature offset:
+##### Mean temperature offset:
 
 ```{r}
 # basal area
@@ -1376,13 +1374,13 @@ gam.check(model.meanair.jan.co.all$gam)
 
 # Plot: basal area
 
-plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -1396,7 +1394,7 @@ output6$location <- "Air" #add temp origin
 output6$resp.var <- "mean temp" #add response variable
 ```
 
-* Max temperature offset:
+##### Max temperature offset:
 
 ```{r}
 # basal area
@@ -1417,13 +1415,13 @@ gam.check(model.maxair.jan.co.all$gam)
 
 # Plot: Basal area
 
-plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -1436,9 +1434,9 @@ output7$location <- "Air" #add temp origin
 output7$resp.var <- "max temp" #add response variable
 ```
 
-#### Warmest month (with covariates)
+#### Warmest month
 
-* Minimum temperature offset:
+##### Minimum temperature offset:
 
 ```{r}
 # basal area
@@ -1459,13 +1457,13 @@ gam.check(model.minair.jul.co.all$gam)
 
 #Plot: Basal area
 
-plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -1478,7 +1476,7 @@ output8$location <- "Air" #add temp origin
 output8$resp.var <- "min temp" #add response variable
 ```
 
-* Mean temperature offset
+##### Mean temperature offset
 
 ```{r}
 # basal area
@@ -1498,13 +1496,13 @@ gam.check(model.meanair.jul.co.all$gam)
 
 # Plot: Basal area
 
-plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -1517,7 +1515,7 @@ output9$location <- "Air" #add temp origin
 output9$resp.var <- "mean temp" #add response variable
 ```
 
-* Maximum temperature offset
+##### Maximum temperature offset
 
 ```{r}
 # basal area
@@ -1537,11 +1535,11 @@ gam.check(model.maxair.jul.co.all$gam)
 
 # Plot: Basal area
 
-plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Basal Area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 # Plot: Canopy Openness
 
-plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -1554,76 +1552,76 @@ output10$location <- "Air" #add temp origin
 output10$resp.var <- "max temp" #add response variable
 ```
 
-### Put together all the plots:
+## Put together all the plots:
 
 ```{r}
 # Basal area
 
-par(mfrow=c(3,2))
+par(mfrow=c(3,2), mar = c(5.3,4.5,4.3,2.5))
 
-plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp mcera5 offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-
-plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp mcera5 offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp mcera5 offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp mcera5 offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp mcera5 offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp mcera5 offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp mcera5 offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp mcera5 offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp mcera5 offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp mcera5 offset warmest month", xlab = "Basal Area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp mcera5 offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+
+plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp mcera5 offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Canopy openness
 
-par(mfrow=c(3,2))
+par(mfrow=c(3,2), mar = c(5.3,4.5,4.3,2.5))
 
-plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp mcera5 offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-
-plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp mcera5 offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp mcera5 offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp mcera5 offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp mcera5 offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp mcera5 offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp mcera5 offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp mcera5 offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp mcera5 offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
-plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp mcera5 offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp mcera5 offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp mcera5 offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 ```
 
-### Put together all model outputs:
+### Save 'mcera5' output table:
 
 ```{r}
 mcera5.results <- rbind(output1, output2, output3, output4, output5, output6, output7, output8, output9, output10)
@@ -1633,9 +1631,9 @@ rm(list = ls(pattern = "model"))
 rm(list = ls(pattern = "output"))
 ```
 
-# Run models with weather station calculated offsets
+# Models with weather station offsets
 
-## Air loggers:
+## Air WS models
 
 ### Only linear, with and without interaction:
 
@@ -1898,10 +1896,9 @@ corrplot(cor.a.jul, method = 'ellipse', order = 'AOE', type = 'upper', addCoef.c
 
 Nothing to worry about.
 
+#### Coldest month
 
-#### Coldest month (with covariates)
-
-* Minimum temperature offset:
+##### Minimum temperature offset:
 
 ```{r}
 # basal area
@@ -1922,13 +1919,13 @@ gam.check(model.minair.jan.co.all$gam)
 
 # Plot: basal area
 
-plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: canopy openness
 
-plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -1942,7 +1939,7 @@ output5$location <- "Air" #add temp origin
 output5$resp.var <- "min temp" #add response variable
 ```
 
-* Mean temperature offset:
+##### Mean temperature offset:
 
 ```{r}
 # basal area
@@ -1963,13 +1960,13 @@ gam.check(model.meanair.jan.co.all$gam)
 
 # Plot: basal area
 
-plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -1983,7 +1980,7 @@ output6$location <- "Air" #add temp origin
 output6$resp.var <- "mean temp" #add response variable
 ```
 
-* Max temperature offset:
+##### Max temperature offset:
 
 ```{r}
 # basal area
@@ -2004,13 +2001,13 @@ gam.check(model.maxair.jan.co.all$gam)
 
 # Plot: Basal area
 
-plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -2023,9 +2020,9 @@ output7$location <- "Air" #add temp origin
 output7$resp.var <- "max temp" #add response variable
 ```
 
-#### Warmest month (with covariates)
+#### Warmest month
 
-* Minimum temperature offset:
+##### Minimum temperature offset:
 
 ```{r}
 # basal area
@@ -2046,13 +2043,13 @@ gam.check(model.minair.jul.co.all$gam)
 
 #Plot: Basal area
 
-plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Min air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -2065,7 +2062,7 @@ output8$location <- "Air" #add temp origin
 output8$resp.var <- "min temp" #add response variable
 ```
 
-* Mean temperature offset
+##### Mean temperature offset
 
 ```{r}
 # basal area
@@ -2085,13 +2082,13 @@ gam.check(model.meanair.jul.co.all$gam)
 
 # Plot: Basal area
 
-plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Plot: Canopy openness
 
-plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Mean air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -2104,7 +2101,7 @@ output9$location <- "Air" #add temp origin
 output9$resp.var <- "mean temp" #add response variable
 ```
 
-* Maximum temperature offset
+##### Maximum temperature offset
 
 ```{r}
 # basal area
@@ -2124,11 +2121,11 @@ gam.check(model.maxair.jul.co.all$gam)
 
 # Plot: Basal area
 
-plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Basal Area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 # Plot: Canopy Openness
 
-plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
@@ -2141,76 +2138,76 @@ output10$location <- "Air" #add temp origin
 output10$resp.var <- "max temp" #add response variable
 ```
 
-### Put together all the plots:
+## Put together all the plots:
 
 ```{r}
 # Basal area
 
-par(mfrow=c(3,2))
+par(mfrow=c(3,2), mar = c(5.3,4.5,4.3,2.5))
 
-plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp WS offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-
-plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp WS offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp WS offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp WS offset warmest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp WS offset coldest month", xlab = "Basal area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp WS offset warmest month", xlab = "Basal Area", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.maxair.jan.ba.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp offset coldest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+
+plot(model.maxair.jul.ba.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp offset warmest month", xlab = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$Basal_Area_20m, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 # Canopy openness
 
-par(mfrow=c(3,2))
+par(mfrow=c(3,2), mar = c(5.3,4.5,4.3,2.5))
 
-plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp WS offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
-
-points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
-
-
-plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp WS offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jan.co.all$gam, scheme = 2, lwd = 3, main = "A) Min air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp WS offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.minair.jul.co.all$gam, scheme = 2, lwd = 3, main = "B) Min air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp WS offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jan.co.all$gam, scheme = 2, lwd = 3, main = "C) Mean air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
 
-plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp WS offset coldest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+plot(model.meanair.jul.co.all$gam, scheme = 2, lwd = 3, main = "D) Mean air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 
-plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp WS offset warmest month", xlab = "Canopy openness", ylab = "Broadleaved component (%)", cex.lab = 1.5, labcex = 1.1, cex.main = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+plot(model.maxair.jan.co.all$gam, scheme = 2, lwd = 3, main = "E) Max air temp offset coldest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
+
+points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
+
+plot(model.maxair.jul.co.all$gam, scheme = 2, lwd = 3, main = "F) Max air temp offset warmest month", xlab = "Canopy openness", ylab = "Proportion of broadleaves (%)", cex.lab = 2, labcex = 1.5, cex.main = 2.5, cex.axis = 2, too.far = 0.2, rug=T, hcolor=colfunc(999), select = 1)
 
 points(tree.temp$CanOpen, tree.temp$perc_broad_20m, pch = 4, cex = 1)
 ```
 
-### Put together all model outputs:
+### Save WS output table:
 
 ```{r}
 ws.results <- rbind(output1, output2, output3, output4, output5, output6, output7, output8, output9, output10)
@@ -2226,15 +2223,14 @@ ws.results$source <- "Weather station"
 all.results <- rbind(era5.results, mcera5.results, ws.results)
 ```
 
-Before exporting these data...
-We have one row per model, i.e. the same model when run with Canopy Openness and Basal area takes two rows. We'll merge those models.
+Before exporting these data... We have one row per model, i.e. the same model when run with Canopy Openness and Basal area takes two rows. We'll merge those models.
 
 ```{r}
 #Separate BA and CO models:
 
 results.co <- all.results[which(all.results$forest.density == "Canopy openness"),]
 
-results.ba <- all.results[which(all.results$forest.density == "Basal area"),]
+results.ba <- all.results[which(all.results$forest.density == expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")"))),]
 
 #Select variables
 results.co <- results.co[,which(colnames(results.co) %in% c("formula", "rsq", "aic", "location", "source", "month"))]
@@ -2263,11 +2259,11 @@ results.baco <- results.ba %>% right_join(results.co, by=c("formula", "location"
 write.csv2(results.baco, file = "./DATASETS/Table_S2.csv", row.names = FALSE)
 ```
 
+# Distance analyses:
 
-# BA at different radi:
+Now we want to assess the effect of forest density assessed at different radii. We measured all trees at a maximum of 10 m from each logger (with the exception of Arville, in which this distance was 20 m - but we will remove this site as the forest was somewhat different in composition and structure to the rest of the study sites). BA has been calculated based on trees measured at different distances, from 4 to 10 m [see script 4]. Here we will run the final models obtained above for all these radii. Only ERA5 data will be used.
 
-Now we want to assess the effect of forest density assessed at different radii. We measured all trees at a maximum of 10 m from each logger (with the exception of Arville, in which this distance was 20 m - but we will remove this site as the forest was somewhat different in composition and structure to the rest of the study sites). BA has been calculated based on trees measured at different distances, from 4 to 10 m [see script 4].
-Here we will run the final models obtained above for all these radii. Only ERA5 data will be used.
+## All sites but Belgium
 
 Remove Arville (no soil loggers in Arville, so we will only remove this site from the air logger datasets). We will also save a dataset only with Arville for later.
 
@@ -3121,7 +3117,7 @@ output4$resp.var <- "mean temp" # add response variable
 rm(list = ls(pattern = "air"))
 ```
 
-### Put together all model outputs and export a table:
+### Save model outputs:
 
 ```{r}
 radii.results <- rbind(output1, output2, output3, output4)
@@ -3131,9 +3127,15 @@ radii.results$source <- "ERA5"
 write.csv2(radii.results, file = "./DATASETS/Table_S3.csv", row.names = FALSE)
 ```
 
-## Arville on its own:
+## Belgium on its own:
 
 Since we measured all trees within a 20 m radius in Arville, we will also run models for radii at each meter between 4 and 20 to see at what scale does the microclimate work.
+
+### Air models:
+
+No soil loggers were installed in Belgium because of wild boar populations.
+
+#### Warmest month:
 
 ```{r}
 # only Forest density
@@ -5086,6 +5088,8 @@ output2$resp.var <- "mean temp" # add response variable
 # cleanup models:
 rm(list = ls(pattern = "air"))
 ```
+
+### Save models results:
 
 ```{r}
 radii.results.arville <- rbind(output1, output2)

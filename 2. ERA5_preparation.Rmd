@@ -154,7 +154,7 @@ wind <- aggregate(list(era5_wind = wind$wind), by = list(Date = wind$date, site 
 
 wind$Date <- gsub(".", "-", wind$Date, fixed = TRUE)
 
-snow <- aggregate(list(era5_snow = snow$snow), by = list(Date = snow$date, site = snow$site), FUN = sum)
+snow <- aggregate(list(era5_snow = snow$snow), by = list(Date = snow$date, site = snow$site), FUN = mean)
 
 snow$Date <- gsub(".", "-", snow$Date, fixed = TRUE)
 

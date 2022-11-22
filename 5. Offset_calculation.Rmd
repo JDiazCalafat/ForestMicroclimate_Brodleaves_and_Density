@@ -152,6 +152,7 @@ coldoffsetplot <-
   guides(fill = guide_legend(reverse=TRUE)) +
   geom_boxplot(width=0.1, fill = "white")
 
+
 # warmest month:
 
 warmoffsetplot <-
@@ -188,7 +189,6 @@ warmoffsetplot <-
         legend.text = element_text(size=15)) +
   guides(fill = guide_legend(reverse=TRUE)) +
   geom_boxplot(width=0.1, fill = "white")
-
 
 ggarrange(coldoffsetplot, warmoffsetplot, common.legend = TRUE, legend = "bottom")
 

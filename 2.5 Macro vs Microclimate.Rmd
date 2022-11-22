@@ -5,7 +5,6 @@ library(lubridate)
 library(ggplot2)
 ```
 
-
 First, we need to load all data:
 
 ```{r}
@@ -627,3 +626,5 @@ nrow = 5,
 common.legend = TRUE, 
 legend = "bottom")
 ```
+
+
