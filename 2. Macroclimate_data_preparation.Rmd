@@ -1,4 +1,16 @@
-In this script, we will compile macroclimate data from different sources (ERA5 downloaded directly from the web, ERA5 downloaded through the mcera5 package and weather stations found close to our study sites). We will produce one file as output for each of these sources. Additional files with below-24h resolution data will also be exported to be used in script 2.5
+# Macroclimate data preparation
+
+In this script, we will compile macroclimate data from different sources (ERA5 downloaded directly from the web, ERA5 downloaded through the mcera5 package and weather stations found close to our study sites). We will produce one file as output for each of these sources. Additional files with below-24h resolution data will also be exported to be used in script 2.5.
+
+*Code reproducibility*
+
+To allow a better reproducibility of this script, we recommend to use checkpoint() set at 2022-11-21. This allows to install and use the packages that were available and run at the time of making this script.
+
+```{r}
+#install.packages("checkpoint")
+library(checkpoint)
+checkpoint("2022-11-21")
+```
 
 Load packages:
 
@@ -11,6 +23,7 @@ library(dplyr)
 library(lubridate)
 library(zoo)
 ```
+
 # ERA5 from web
 
 First, load the coordinate data of our experimental forests:
@@ -22,8 +35,7 @@ df <- read.table(file = "./ERA5/coordinates.txt", header = T)
 coordinates <- data.frame(xcoords = df$lon, ycoords = df$lat)
 ```
 
-Load climatic ERA5 model:
-Data source: https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land?tab=overview and https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
+Load climatic ERA5 model: Data source: <https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land?tab=overview> and <https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form>
 
 ```{r}
 air.temp.nc <- brick("./ERA5/ERA5_mean.nc")
@@ -32,6 +44,7 @@ wind.nc <- brick("./ERA5/ERA5_wind.nc")
 snow.nc <- brick("./ERA5/ERA5_snowprec.nc", varname = "sd")
 prec.nc <- brick("./ERA5/ERA5_snowprec.nc", varname = "tp")
 ```
+
 And subset the ERA5 data to our climatic extent (earliest date: 2020-01-01; latest date: 2021-07-31).
 
 ```{r}
@@ -46,7 +59,7 @@ snow.nc <- snow.nc[[which(getZ(snow.nc) >= as.Date("2020-01-01") & getZ(snow.nc)
 prec.nc <- prec.nc[[which(getZ(prec.nc) >= as.Date("2020-01-01") & getZ(prec.nc) <= as.Date("2021-07-31"))]]
 ```
 
-Convert coordinates to spatial points: 
+Convert coordinates to spatial points:
 
 ```{r}
 coordinates <- SpatialPoints(coords = coordinates, proj4string = crs(air.temp.nc))
@@ -136,8 +149,7 @@ write.csv(era5.air.temp, file = "./DATASETS/ERA5_raw_hour.csv", row.names = FALS
 rm(sequence)
 ```
 
-Temperature data in ERA5 has been downloaded at an hourly basis.
-Before merging all ERA5 temperatures, we want to aggregate them by date, and differently depending on the temperature variable (i.e. calculate the mean for the average daily temperature, but the min for all the min values recorded by day for the minimum daily temperature). We will also rename the "hour" variable to "Date".
+Temperature data in ERA5 has been downloaded at an hourly basis. Before merging all ERA5 temperatures, we want to aggregate them by date, and differently depending on the temperature variable (i.e. calculate the mean for the average daily temperature, but the min for all the min values recorded by day for the minimum daily temperature). We will also rename the "hour" variable to "Date".
 
 ```{r}
 era5.meanair.temp <- aggregate(list(era5_meanair = era5.air.temp$air_temp), by = list(Date = era5.air.temp$date, site = era5.air.temp$site), FUN = mean)
@@ -205,7 +217,6 @@ write.csv(era5.temp, file = "./DATASETS/ERA5_temp.csv", row.names = FALSE, quote
 rm(list = ls())
 ```
 
-
 # 'mcera5' package
 
 Install *mcera5* package:
@@ -219,11 +230,11 @@ library(mcera5)
 set UID and API key:
 
 ```{r}
-uid <- "109976"
-cds_api_key <- "c88eab9f-cb84-4237-99ce-ef2f12bcfcfc"
+uid <- "..."
+cds_api_key <- "..."
 ```
 
-Use `ecmwfr` package to register your machine with your  credentials:
+Use `ecmwfr` package to register your machine with your credentials:
 
 ```{r}
 ecmwfr::wf_set_key(user = uid,key = cds_api_key,service = "cds")
@@ -590,7 +601,6 @@ write.csv(mcera5_merged, file = "./DATASETS/mcera5.csv", quote = FALSE, row.name
 
 rm(list = ls())
 ```
-
 
 # Weather station data
 

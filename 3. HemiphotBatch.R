@@ -34,7 +34,7 @@
 
 ### clear memory and set working directory
 rm(list = ls())
-setwd("C:/Users/jndi0002/Documents/R/GITHUB/Trees_and_Climate/")  ## set your working directory
+setwd("...")  ## set your working directory
 
 
 
@@ -83,7 +83,7 @@ location.uoc        = 0.15
 ### in a subdirectory images
 ### load all JPG file names in a list
 
-all.images = list.files("J:/HEMISPHERICAL PICTURES/CHOSEN ONES/SILJAN_HEMISPHERICAL PICTURES/SILJAN WINTER",pattern = ".JPG", include.dirs = TRUE, full.names = TRUE, recursive = TRUE)
+all.images = list.files("J:/...",pattern = ".JPG", include.dirs = TRUE, full.names = TRUE, recursive = TRUE)
 nr.images = length(all.images); nr.images
 
 ## Create data frame to hold all results
@@ -136,6 +136,6 @@ t2 = Sys.time()
 head(all.data)
 
 # save data
-write.csv2(all.data, "Siljan_winter_HemiphotOutput.csv", row.names = FALSE)
+write.csv2(all.data, "example.csv", row.names = FALSE)
 
 

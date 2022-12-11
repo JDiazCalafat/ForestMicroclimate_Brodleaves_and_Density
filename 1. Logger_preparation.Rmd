@@ -1,11 +1,17 @@
----
-title: "Data exploration"
-author: "Joan Diaz Calafat"
-date: "10/19/2021"
-output: html_document
----
+# Logger data preparation
+
+*Code reproducibility*
+
+To allow a better reproducibility of this script, we recommend to use checkpoint() set at 2022-11-21. This allows to install and use the packages that were available and run at the time of making this script.
+
+```{r}
+#install.packages("checkpoint")
+library(checkpoint)
+checkpoint("2022-11-21")
+```
 
 Load packages:
+
 ```{r}
 library(readxl)
 library(lubridate)
@@ -19,12 +25,14 @@ library(zoo)
 library(ncdf4)
 library(raster)
 library(maptools)
+library(checkpoint)
 #library(GGally)
 ```
 
-# Load all data:
+## Load all data:
 
-## Arville:
+### Site B (Arville):
+
 ```{r}
 file.list <- list.files(path = "J:/TEMPERATURE DATA/ARVILLE", 
                         pattern = "*.xlsx", all.files = FALSE, full.names = TRUE, recursive = FALSE,
@@ -44,7 +52,8 @@ arville.temp <- separate(arville.temp, Date_time, into = c("Date", "time"), sep 
 rm(df.list)
 ```
 
-## Hochwald:
+### Site G (Hochwald):
+
 ```{r}
 file.list <- list.files(path = "J:/TEMPERATURE DATA/HOCHWALD/", 
                         pattern = "*.xlsx", all.files = FALSE, full.names = TRUE, recursive = FALSE,
@@ -63,9 +72,10 @@ hochwald.temp <- separate(hochwald.temp, Date_time, into = c("Date", "time"), se
 rm(df.list)
 ```
 
-## Vivarp:
+### Site SS (Vivarp):
+
 ```{r}
-file.list <- list.files(path = "J:/TEMPERATURE DATA/VIVARP/EXCELSUCKS", pattern = "*.csv", all.files = FALSE,
+file.list <- list.files(path = "J:/TEMPERATURE DATA/VIVARP/", pattern = "*.csv", all.files = FALSE,
                         full.names = TRUE, recursive = TRUE,
                         ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
 
@@ -107,7 +117,7 @@ rm(df.list)
 Soil loggers in Vivarp were from a different model. We'll load them separately:
 
 ```{r}
-file.list <- list.files(path = "J:/TEMPERATURE DATA/VIVARP/211022 temp data PO_SOIL", pattern = "*.xlsx", all.files = FALSE,
+file.list <- list.files(path = "J:/TEMPERATURE DATA/VIVARP/SOIL", pattern = "*.xlsx", all.files = FALSE,
                         full.names = TRUE, recursive = TRUE,
                         ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
 
@@ -137,9 +147,10 @@ rm(vivarp.temp.2)
 ```
 
 
-## Siljan:
+### Site MS (Siljan):
+
 ```{r}
-file.list <- list.files(path = "J:/TEMPERATURE DATA/SILJAN/202103_SILJAN_TEMPERATURE", 
+file.list <- list.files(path = "J:/TEMPERATURE DATA/SILJAN/", 
                         pattern = "*.xlsx", all.files = FALSE, full.names = TRUE,
                         recursive = FALSE, ignore.case = FALSE, include.dirs = FALSE,                         no.. = FALSE)
 
@@ -156,9 +167,10 @@ siljan.temp <- separate(siljan.temp, Date_time, into = c("Date", "time"), sep = 
 rm(df.list)
 ```
 
-## Sandsjö:
+### Site NS (Sandsjö):
+
 ```{r}
-file.list <- list.files(path = "J:/TEMPERATURE DATA/SANDSJO/Temperature_Vindeln_202010XX", 
+file.list <- list.files(path = "J:/TEMPERATURE DATA/SANDSJO/", 
                         pattern = "*.xlsx", all.files = FALSE, full.names = TRUE,
                         recursive = FALSE, ignore.case = FALSE, include.dirs = FALSE,
                         no.. = FALSE)
@@ -176,9 +188,9 @@ sandsjo.temp <- separate(sandsjo.temp, Date_time, into = c("Date", "time"), sep 
 rm(df.list)
 ```
 
-# Check data completeness and remove problematic plots
+## Check data completeness and remove problematic plots
 
-## Arville
+### Site B (Arville):
 
 ```{r}
 # In Arville, only air temperature was recorded. But we'll create a new variable (arville.temp.a) just for the sake of nomenclature consistence of this script
@@ -223,7 +235,7 @@ rm(coldmonth.arville.a)
 rm(warmmonth.arville.a)
 ```
 
-## Hochwald
+### Site G (Hochwald):
 
 ```{r}
 hochwald.temp$month <- month(hochwald.temp$Date)
@@ -310,7 +322,7 @@ rm(hochwald.temp.s.jan)
 rm(hochwald.temp.s.jul)
 ```
 
-## Vivarp
+### Site SS (Vivarp):
 
 ```{r}
 vivarp.temp$month <- month(vivarp.temp$Date)
@@ -396,7 +408,7 @@ rm(vivarp.temp.a)
 rm(vivarp.temp.s)
 ```
 
-## Siljan
+### Site MS (Siljan):
 
 ```{r}
 siljan.temp$month <- month(siljan.temp$Date)
@@ -492,7 +504,7 @@ rm(warmmonth.siljan.s)
 ```
 
 
-## Sandsjö
+### Site NS (Sandsjö):
 
 ```{r}
 sandsjo.temp$month <- month(sandsjo.temp$Date)
@@ -619,7 +631,7 @@ write.csv(extract, file = "./DATASETS/rawtemp_min.csv", row.names = FALSE, quote
 rm(extract)
 ```
 
-# Daily temperature variable calculation
+## Daily temperature variable calculation
 
 Calculate mean and sd values per day and logger before merging:
 

@@ -1,3 +1,15 @@
+# Overstory calculations
+
+*Code reproducibility*
+
+To allow a better reproducibility of this script, we recommend to use checkpoint() set at 2022-11-21. This allows to install and use the packages that were available and run at the time of making this script.
+
+```{r}
+#install.packages("checkpoint")
+library(checkpoint)
+checkpoint("2022-11-21")
+```
+
 Load packages:
 
 ```{r}
@@ -326,37 +338,6 @@ tree.data.plot[is.nan(tree.data.plot)] <- 0
 ```
 
 
-## Competition index
-
-```{r}
-# tree.data.2 <- tree.data %>%
-#   group_by(Site, Plot) %>%
-#   summarise(
-# nci20m = sum(DBH[real.dist <= 20]/Distance[real.dist <= 20]),
-# nci19m = sum(DBH[real.dist <= 19]/Distance[real.dist <= 19]),
-# nci18m = sum(DBH[real.dist <= 18]/Distance[real.dist <= 18]),
-# nci17m = sum(DBH[real.dist <= 17]/Distance[real.dist <= 17]),
-# nci16m = sum(DBH[real.dist <= 16]/Distance[real.dist <= 16]),
-# nci15m = sum(DBH[real.dist <= 15]/Distance[real.dist <= 15]),
-# nci14m = sum(DBH[real.dist <= 14]/Distance[real.dist <= 14]),
-# nci13m = sum(DBH[real.dist <= 13]/Distance[real.dist <= 13]),
-# nci12m = sum(DBH[real.dist <= 12]/Distance[real.dist <= 12]),
-# nci11m = sum(DBH[real.dist <= 11]/Distance[real.dist <= 11]),
-# nci10m = sum(DBH[real.dist <= 10]/Distance[real.dist <= 10]),
-# nci9m = sum(DBH[real.dist <= 9]/Distance[real.dist <= 9]),
-# nci8m = sum(DBH[real.dist <= 8]/Distance[real.dist <= 8]),
-# nci7m = sum(DBH[real.dist <= 7]/Distance[real.dist <= 7]),
-# nci6m = sum(DBH[real.dist <= 6]/Distance[real.dist <= 6]),
-# nci5m = sum(DBH[real.dist <= 5]/Distance[real.dist <= 5]),
-# nci4m = sum(DBH[real.dist <= 4]/Distance[real.dist <= 4]))
-# 
-# 
-# # Merge with previous data
-# tree.data.plot <- tree.data.plot %>% plyr::join(tree.data.2, by=c("Site","Plot"))
-# 
-# rm(tree.data.2)
-```
-
 ## Hemispherical pictures
 
 Canopy opennes was calculated with the script _HemiphotBatch.R_ separately for each site. This script comes from ter Steege, H. (2018).
@@ -414,7 +395,7 @@ write.csv(tree.data.plot, file = "./DATASETS/tree_data.csv", row.names = FALSE, 
 # Figure
 
 ```{r}
-tree.data.plot$site_label <- ifelse(tree.data.plot$site == "Arville", "B (49° N)", ifelse(tree.data.plot$site == "Hochwald", "G (50° N)", ifelse(tree.data.plot$site == "Vivarp", "SS (56° N)", ifelse(tree.data.plot$site == "Siljan", "MS (60° N)", "NS (64° N)"))))
+tree.data.plot$site_label <- ifelse(tree.data.plot$site == "Arville", "B (50° N)", ifelse(tree.data.plot$site == "Hochwald", "G (49° N)", ifelse(tree.data.plot$site == "Vivarp", "SS (56° N)", ifelse(tree.data.plot$site == "Siljan", "MS (60° N)", "NS (64° N)"))))
 
 tree.data.plot %>%
 # filter(!(site %in% "Arville")) %>%
@@ -425,10 +406,10 @@ tree.data.plot %>%
  size = 2.5) +
   scale_shape_manual(name = "Site",
                      values=c(15, 16, 17, 18, 20),
-                     limits=c("NS (64° N)", "MS (60° N)", "SS (56° N)", "G (50° N)", "B (49° N)")) +
+                     limits=c("NS (64° N)", "MS (60° N)", "SS (56° N)", "B (50° N)", "G (49° N)")) +
   scale_color_manual(name = "Site",
                      values=c("#E09F3E", "#89BDB9", "#335C67", "#65875A", "#9E2A2B"),
-                     limits=c("NS (64° N)", "MS (60° N)", "SS (56° N)", "G (50° N)", "B (49° N)")) +
+                     limits=c("NS (64° N)", "MS (60° N)", "SS (56° N)", "B (50° N)", "G (49° N)")) +
  labs(x = expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")")), y = "Broadleaves (%)", fill = "Site") +
  theme_minimal() +
  theme(axis.title.y = element_text(size = 16L), axis.title.x = element_text(size = 16L),

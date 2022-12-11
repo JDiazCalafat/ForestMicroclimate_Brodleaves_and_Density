@@ -1,5 +1,17 @@
 # Macro vs. Microclimate
 
+*Code reproducibility*
+
+To allow a better reproducibility of this script, we recommend to use checkpoint() set at 2022-11-21. This allows to install and use the packages that were available and run at the time of making this script.
+
+```{r}
+#install.packages("checkpoint")
+library(checkpoint)
+checkpoint("2022-11-21")
+```
+
+Load packages:
+
 ```{r}
 library(lubridate)
 library(ggplot2)

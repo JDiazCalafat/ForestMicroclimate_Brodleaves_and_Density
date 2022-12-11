@@ -1,9 +1,14 @@
----
-title: "Models"
-author: "Joan Diaz Calafat"
-date: "1/10/2022"
-output: pdf_document
----
+# GAMMs
+
+*Code reproducibility*
+
+To allow a better reproducibility of this script, we recommend to use checkpoint() set at 2022-11-21. This allows to install and use the packages that were available and run at the time of making this script.
+
+```{r}
+#install.packages("checkpoint")
+library(checkpoint)
+checkpoint("2022-11-21")
+```
 
 Load packages:
 
@@ -11,7 +16,6 @@ Load packages:
 library(lubridate)
 library(gamm4)
 library(dplyr)
-library(gamm4)
 library(RColorBrewer)
 library(stringr)
 library(corrplot)
@@ -33,7 +37,7 @@ tree.temp$Day <- day(tree.temp$Date)
 Remove all column variables for data between 10 and 20 m radius:
 
 ```{r}
-tree.temp <- tree.temp[,which(colnames(tree.temp) %in% c("site", "Plot", "Date", "location", "month", "Temp.mean", "Temp.min", "Temp.max", "Temp.sd", "era5_meanair", "era5_maxair", "era5_minair", "era5_meansoil", "air_meanoff_ERA5", "air_minoff_ERA5", "air_maxoff_ERA5", "soil_meanoff_ERA5", "Basal_Area_20m", "Basal_Area_19m", "Basal_Area_18m", "Basal_Area_17m", "Basal_Area_16m", "Basal_Area_15m", "Basal_Area_14m", "Basal_Area_13m" ,"Basal_Area_12m", "Basal_Area_11m", "Basal_Area_10m", "Basal_Area_09m", "Basal_Area_08m", "Basal_Area_07m", "Basal_Area_06m", "Basal_Area_05m", "Basal_Area_04m","CanOpen", "era5_prev_av_temp", "mcera5_prev_av_temp", "era5_wind", "perc_broad_20m", "perc_broad_19m", "perc_broad_18m", "perc_broad_17m", "perc_broad_16m", "perc_broad_15m", "perc_broad_14m", "perc_broad_13m", "perc_broad_12m", "perc_broad_11m", "perc_broad_10m", "perc_broad_09m", "perc_broad_08m", "perc_broad_07m", "perc_broad_06m", "perc_broad_05m", "perc_broad_04m", "era5_snow", "era5_prev_av_prec", "mcera5_prev_av_prec", "air_meanoff_ERA5", "air_minoff_ERA5", "air_maxoff_ERA5_ERA5", "air_meanoff_mcera5", "air_minoff_mcera5", "air_maxoff_mcera5", "air_meanoff_ws", "air_minoff_ws", "air_maxoff_ws", "Day", "soil_meanoff_ERA5"))]
+tree.temp <- tree.temp[,which(colnames(tree.temp) %in% c("site", "Plot", "Date", "location", "month", "Temp.mean", "Temp.min", "Temp.max", "Temp.sd", "era5_meanair", "era5_maxair", "era5_minair", "era5_meansoil", "air_meanoff_ERA5", "air_minoff_ERA5", "air_maxoff_ERA5", "soil_meanoff_ERA5", "Basal_Area_20m", "Basal_Area_19m", "Basal_Area_18m", "Basal_Area_17m", "Basal_Area_16m", "Basal_Area_15m", "Basal_Area_14m", "Basal_Area_13m" ,"Basal_Area_12m", "Basal_Area_11m", "Basal_Area_10m", "Basal_Area_09m", "Basal_Area_08m", "Basal_Area_07m", "Basal_Area_06m", "Basal_Area_05m", "Basal_Area_04m","CanOpen", "era5_prev_av_temp", "mcera5_prev_av_temp", "era5_wind", "perc_broad_20m", "perc_broad_19m", "perc_broad_18m", "perc_broad_17m", "perc_broad_16m", "perc_broad_15m", "perc_broad_14m", "perc_broad_13m", "perc_broad_12m", "perc_broad_11m", "perc_broad_10m", "perc_broad_09m", "perc_broad_08m", "perc_broad_07m", "perc_broad_06m", "perc_broad_05m", "perc_broad_04m", "era5_snow", "era5_prev_av_prec", "mcera5_prev_av_prec", "ws_prev_av_temp", "air_meanoff_ERA5", "air_minoff_ERA5", "air_maxoff_ERA5_ERA5", "air_meanoff_mcera5", "air_minoff_mcera5", "air_maxoff_mcera5", "air_meanoff_ws", "air_minoff_ws", "air_maxoff_ws", "Day", "soil_meanoff_ERA5"))]
 ```
 
 Separate air and soil loggers:
@@ -121,7 +125,7 @@ GAMM_r2aic <- function(model){
   rsq <- round(summary(model$gam)$r.sq,2)
   aic <- round(AIC(model$mer),2)
   forest.density <- if(grepl("CanOpen", formula) == TRUE){
-    "Canopy openness"} else {expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")"))}
+    "Canopy openness"} else {"Basal Area"}
   broadleaves.radio <- str_sub(formula, start = str_locate(formula, "perc_broad_")[2]+1, end = str_locate(formula, "perc_broad_")[2]+3)
   basalarea.radio <- str_sub(formula, start = str_locate(formula, "Basal_Area_")[2]+1, end = str_locate(formula, "Basal_Area_")[2]+3)
   
@@ -1902,7 +1906,7 @@ Nothing to worry about.
 
 ```{r}
 # basal area
-model.minair.jan.ba.all <- gamm4(air_minoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.minair.jan.ba.all <- gamm4(air_minoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.minair.jan.ba.all$gam)
 AIC(model.minair.jan.ba.all$mer)
@@ -1910,7 +1914,7 @@ AIC(model.minair.jan.ba.all$mer)
 gam.check(model.minair.jan.ba.all$gam)
 
 # canopy openness
-model.minair.jan.co.all <- gamm4(air_minoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.minair.jan.co.all <- gamm4(air_minoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.minair.jan.co.all$gam)
 AIC(model.minair.jan.co.all$mer)
@@ -1943,7 +1947,7 @@ output5$resp.var <- "min temp" #add response variable
 
 ```{r}
 # basal area
-model.meanair.jan.ba.all <- gamm4(air_meanoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.meanair.jan.ba.all <- gamm4(air_meanoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.meanair.jan.ba.all$gam)
 AIC(model.meanair.jan.ba.all$mer)
@@ -1951,7 +1955,7 @@ AIC(model.meanair.jan.ba.all$mer)
 gam.check(model.meanair.jan.ba.all$gam)
 
 # canopy openness
-model.meanair.jan.co.all <- gamm4(air_meanoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.meanair.jan.co.all <- gamm4(air_meanoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.meanair.jan.co.all$gam)
 AIC(model.meanair.jan.co.all$mer)
@@ -1984,7 +1988,7 @@ output6$resp.var <- "mean temp" #add response variable
 
 ```{r}
 # basal area
-model.maxair.jan.ba.all <- gamm4(air_maxoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.maxair.jan.ba.all <- gamm4(air_maxoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.maxair.jan.ba.all$gam)
 AIC(model.maxair.jan.ba.all$mer)
@@ -1992,7 +1996,7 @@ AIC(model.maxair.jan.ba.all$mer)
 gam.check(model.maxair.jan.ba.all$gam)
 
 # canopy openness
-model.maxair.jan.co.all <- gamm4(air_maxoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
+model.maxair.jan.co.all <- gamm4(air_maxoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jan)
 
 summary(model.maxair.jan.co.all$gam)
 AIC(model.maxair.jan.co.all$mer)
@@ -2026,7 +2030,7 @@ output7$resp.var <- "max temp" #add response variable
 
 ```{r}
 # basal area
-model.minair.jul.ba.all <- gamm4(air_minoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+model.minair.jul.ba.all <- gamm4(air_minoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
 
 summary(model.minair.jul.ba.all$gam)
 AIC(model.minair.jul.ba.all$mer)
@@ -2034,7 +2038,7 @@ AIC(model.minair.jul.ba.all$mer)
 gam.check(model.minair.jul.ba.all$gam)
 
 # canopy openness
-model.minair.jul.co.all <- gamm4(air_minoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+model.minair.jul.co.all <- gamm4(air_minoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
 
 summary(model.minair.jul.co.all$gam)
 AIC(model.minair.jul.co.all$mer)
@@ -2066,7 +2070,7 @@ output8$resp.var <- "min temp" #add response variable
 
 ```{r}
 # basal area
-model.meanair.jul.ba.all <- gamm4(air_meanoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+model.meanair.jul.ba.all <- gamm4(air_meanoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
 
 summary(model.meanair.jul.ba.all$gam)
 AIC(model.meanair.jul.ba.all$mer)
@@ -2074,7 +2078,7 @@ AIC(model.meanair.jul.ba.all$mer)
 gam.check(model.meanair.jul.ba.all$gam)
 
 # canopy openness
-model.meanair.jul.co.all <- gamm4(air_meanoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+model.meanair.jul.co.all <- gamm4(air_meanoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
 
 summary(model.meanair.jul.co.all$gam)
 AIC(model.meanair.jul.co.all$mer)
@@ -2105,14 +2109,14 @@ output9$resp.var <- "mean temp" #add response variable
 
 ```{r}
 # basal area
-model.maxair.jul.ba.all <- gamm4(air_maxoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+model.maxair.jul.ba.all <- gamm4(air_maxoff_ws ~ s(Basal_Area_20m,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
 
 summary(model.maxair.jul.ba.all$gam)
 AIC(model.maxair.jul.ba.all$mer)
 gam.check(model.maxair.jul.ba.all$gam)
 
 # canopy openness
-model.maxair.jul.co.all <- gamm4(air_maxoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + mcera5_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
+model.maxair.jul.co.all <- gamm4(air_maxoff_ws ~ s(CanOpen,perc_broad_20m) + s(autocorr) + site + era5_wind + ws_prev_av_temp + mcera5_prev_av_prec, random = ~ (1|site:Plot), data = tree.temp.a.jul)
 
 summary(model.maxair.jul.co.all$gam)
 AIC(model.maxair.jul.co.all$mer)
@@ -2230,7 +2234,7 @@ Before exporting these data... We have one row per model, i.e. the same model wh
 
 results.co <- all.results[which(all.results$forest.density == "Canopy openness"),]
 
-results.ba <- all.results[which(all.results$forest.density == expression(paste("Basal Area (", m^2, " \U00B7 ", ha^-1,")"))),]
+results.ba <- all.results[which(all.results$forest.density == "Basal Area"),]
 
 #Select variables
 results.co <- results.co[,which(colnames(results.co) %in% c("formula", "rsq", "aic", "location", "source", "month"))]
