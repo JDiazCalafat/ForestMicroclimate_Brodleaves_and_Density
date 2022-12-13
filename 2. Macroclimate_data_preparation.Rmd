@@ -1,6 +1,6 @@
 # Macroclimate data preparation
 
-In this script, we will compile macroclimate data from different sources (ERA5 downloaded directly from the web, ERA5 downloaded through the mcera5 package and weather stations found close to our study sites). We will produce one file as output for each of these sources. Additional files with below-24h resolution data will also be exported to be used in script 2.5.
+In this script, we will compile macroclimate data from different sources (ERA5 downloaded directly from the web, ERA5 downloaded through the mcera5 package and weather stations found close to our study sites). We will produce one file as output for each of these sources.
 
 *Code reproducibility*
 
@@ -129,24 +129,6 @@ prec <- melt(prec, variable.name = "site", value.name = "era5_prec")
 names(prec) <- c("date", "site", "prec")
 
 rm(df)
-```
-
-Extract ERA5 mean temperature raw data for Script 2.5
-
-```{r}
-sequence <- as.data.frame(seq(as.POSIXct('2020-01-01 00:00:00'), as.POSIXct('2021-07-31 23:00:00'), by = 'hour'))
-
-names(sequence) <- "seq"
-
-sequence <- separate(sequence, seq, into = c("Date", "time"), sep = " (?=[^ ]+$)")
-
-era5.air.temp$time <- rep(sequence$time, length.out = length(era5.air.temp$date))
-
-era5.air.temp$date <- gsub(".", "-", era5.air.temp$date, fixed = TRUE)
-
-write.csv(era5.air.temp, file = "./DATASETS/ERA5_raw_hour.csv", row.names = FALSE, quote = FALSE)
-
-rm(sequence)
 ```
 
 Temperature data in ERA5 has been downloaded at an hourly basis. Before merging all ERA5 temperatures, we want to aggregate them by date, and differently depending on the temperature variable (i.e. calculate the mean for the average daily temperature, but the min for all the min values recorded by day for the minimum daily temperature). We will also rename the "hour" variable to "Date".
@@ -438,8 +420,6 @@ mcera5 <- dplyr::rename(mcera5,
          "datetime" = "obs_time",
          "mcera5_airtemp" = "temperature")
 
-write.csv(mcera5, file = "./DATASETS/mcera5_raw.csv", quote = FALSE, row.names = FALSE) # save a version of this dataset for plots in script 2.5
-
 mcera5$date <- substr(mcera5$datetime, 1,10) # extract dates without time
 
 mcera5_min <- aggregate(list(minair_mcera5 = mcera5$mcera5_airtemp), by = list(site = mcera5$site, Date = mcera5$date), FUN = min)
@@ -706,8 +686,6 @@ hochwald.station <- dplyr::rename(hochwald.station,
 
 # There is no maximum or minimum temperature for Hochwald, but data is recorded at an hourly basis, so we will calculate daily maximum, mean and min temperatures
 
-hochwald.station.hourly <- hochwald.station # backup of daily data for future graphs
-
 hochwald.dates <- seq(as.Date("2020-06-25"),as.Date("2021-01-31"), by = 'day')
 
 hochwald.station <- hochwald.station[which(hochwald.station$date %in% hochwald.dates),]
@@ -815,21 +793,6 @@ Merge all weather station data:
 
 ```{r}
 weather.stations <- rbind(arville.station, hochwald.station, vivarp.station, siljan.station, sandsjo.station)
-```
-
-Save data from weather stations with temperature values at a resolution lower than 24h for script 2.5
-
-```{r}
-#missing columns
-hochwald.station.hourly$site <- "Hochwald"
-hochwald.station.hourly$station_minair <- NA
-hochwald.station.hourly$station_maxair <- NA
-vivarp.station.hourly$station_minair <- NA
-vivarp.station.hourly$station_maxair <- NA
-
-weather.stations.hourly <- rbind(arville.station.hourly, hochwald.station.hourly, vivarp.station.hourly)
-
-write.csv(weather.stations.hourly, file = "./DATASETS/ws_hourlydata.csv", quote = FALSE, row.names = FALSE)
 ```
 
 Calculate rolling mean temperature for the previous five days. No precipitation this time:

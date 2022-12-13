@@ -54,24 +54,6 @@ We are also just interested in trees above 5cm of DBH. DBH is recorded in mm, so
 tree.data <- tree.data[which(tree.data$DBH >= 50),]
 ```
 
-Plot 35 and 36 in Arville were located in a clear cut with no trees, but we are still interested in temperatures recorded there, so we will add these back to the dataset (they were removed in line 26 "na.omit() instruction and would have been removed again by line 41).
-
-```{r}
-#missing.arville <- data.frame(names(tree.data), c("Arville", 35, NA, NA, NA, NA, NA), c("Arville", 36, NA, NA, NA, NA, NA))
-
-#rownames(missing.arville) <- missing.arville$names.tree.data.
-
-#missing.arville <- missing.arville[,-which(names(missing.arville) == "names.tree.data.")]
-
-#missing.arville <- t(missing.arville)
-
-#rownames(missing.arville) <- NULL 
-  
-#tree.data <- rbind(tree.data, missing.arville)
-
-#rm(missing.arville)
-```
-
 ## Calculate basal area
 
 We are interested in calculating how much basal area per site and tree species here was. For this, we will duplicate our main dataset.
