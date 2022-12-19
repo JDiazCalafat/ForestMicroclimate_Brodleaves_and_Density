@@ -2263,6 +2263,25 @@ results.baco <- results.ba %>% right_join(results.co, by=c("formula", "location"
 write.csv2(results.baco, file = "./DATASETS/Table_S2.csv", row.names = FALSE)
 ```
 
+To predict temperature offsets based on our models, use the **predict.gam()** function, specifying the model (air or soil temperature offset, and minumum, mean or maximum temperature, as well as example data with forest density data ["CanOpen" for canopy openness or "Basal_Area_20m" for basal area], percentage of broadleaves "perc_broad_20m", wind "era5_wind", averaged temperature in the last 5 days "ws_prev_av_temp", averaged precipitation in the last 5 days "mcera5_prev_av_prec", snow ["era5_snow", when needed] and site ["site"] and an autocorrelation parameter based on date ["autocorr"]).
+
+For example, here we will predict mean and maximum air temperature offsets for our site in northern Sweden at basal area of 25 m2*ha-1 and percentage of broadleaves of 0, 25 and 100:
+_For the values in wind, previous precipitation and previous temperature we have used the average of all data available during the warmest month in northern Sweden (Sandsjö)._
+
+```{r}
+# Load example data in the correct format:
+
+example <- read.csv("example.csv", header = TRUE, sep = ";")
+
+example
+
+# Predictions of mean air temperature offsets:
+predict.gam(model.meanair.jul.ba.all$gam, newdata = example, se.fit = TRUE)
+
+# Predictions of maximum air temperature offsets:
+predict.gam(model.maxair.jul.ba.all$gam, newdata = example, se.fit = TRUE)
+```
+
 # Distance analyses:
 
 Now we want to assess the effect of forest density assessed at different radii. We measured all trees at a maximum of 10 m from each logger (with the exception of Arville, in which this distance was 20 m - but we will remove this site as the forest was somewhat different in composition and structure to the rest of the study sites). BA has been calculated based on trees measured at different distances, from 4 to 10 m [see script 4]. Here we will run the final models obtained above for all these radii. Only ERA5 data will be used.
