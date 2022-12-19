@@ -2271,7 +2271,7 @@ _For the values in wind, previous precipitation and previous temperature we have
 ```{r}
 # Load example data in the correct format:
 
-example <- read.csv("example.csv", header = TRUE, sep = ";")
+example <- read.csv("./DATASETS/example.csv", header = TRUE, sep = ";")
 
 example
 
